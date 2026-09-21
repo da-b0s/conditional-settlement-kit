@@ -8,8 +8,8 @@
  * scheduling failure a user cannot read is a scheduling failure they will
  * assume means their escrow is gone.
  */
-import { describe, expect, it } from "vitest";
 import { MAX_SCHEDULE_SECONDS, ScheduleFailed, describeScheduleError, scheduleExpiry, scheduleFate } from "./schedule";
+import { describe, expect, it } from "vitest";
 
 const OPERATOR = { accountId: "0.0.1001", privateKey: "0x" + "11".repeat(32), network: "testnet" as const };
 const REGISTRY = "0x" + "ab".repeat(20);
@@ -99,7 +99,9 @@ describe("translating Hedera's statuses", () => {
   });
 
   it("treats a duplicate schedule as the non-event it is", () => {
-    expect(describeScheduleError(new Error("IDENTICAL_SCHEDULE_ALREADY_CREATED"))).toMatch(/will fire at the same time/);
+    expect(describeScheduleError(new Error("IDENTICAL_SCHEDULE_ALREADY_CREATED"))).toMatch(
+      /will fire at the same time/,
+    );
   });
 
   it.each([

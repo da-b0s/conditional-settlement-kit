@@ -210,7 +210,9 @@ export function globalBoundDamage(
  */
 export function normaliseTo18(answer: bigint, feedDecimals: number = FEED_DECIMALS): bigint {
   if (feedDecimals > TARGET_DECIMALS) {
-    throw new Error(`Feed reports ${feedDecimals} decimals, more than the ${TARGET_DECIMALS} target; narrowing is lossy.`);
+    throw new Error(
+      `Feed reports ${feedDecimals} decimals, more than the ${TARGET_DECIMALS} target; narrowing is lossy.`,
+    );
   }
   return answer * 10n ** BigInt(TARGET_DECIMALS - feedDecimals);
 }

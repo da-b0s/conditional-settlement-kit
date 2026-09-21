@@ -16,9 +16,9 @@ export default function Home() {
         <p className="text-xs font-semibold uppercase tracking-wider text-primary">Scaffold-HBAR template</p>
         <h1 className="mt-3 text-4xl font-bold leading-tight sm:text-5xl">Conditional Settlement Kit</h1>
         <p className="mt-5 text-lg text-base-content/80">
-          Escrow a payout, attach it to a price condition, and let anyone settle it once the condition holds. The
-          escrow is on-chain, the oracle is swappable, and every state change leaves a public record a counterparty
-          can audit without being given access to anything.
+          Escrow a payout, attach it to a price condition, and let anyone settle it once the condition holds. The escrow
+          is on-chain, the oracle is swappable, and every state change leaves a public record a counterparty can audit
+          without being given access to anything.
         </p>
 
         <div className="mt-8 flex flex-wrap gap-3">
@@ -49,8 +49,8 @@ export default function Home() {
           <div className="rounded-box border border-base-300 p-5">
             <p className="text-sm text-base-content/80">
               So one global <span className="font-mono text-xs">maxAge</span> fails both ways. Tight rejects healthy
-              stablecoin feeds. Loose accepts an HBAR price a day old — roughly a hundred updates behind — and settles
-              a payout on it without complaint. Nothing looks wrong when that happens, which is what makes it the
+              stablecoin feeds. Loose accepts an HBAR price a day old — roughly a hundred updates behind — and settles a
+              payout on it without complaint. Nothing looks wrong when that happens, which is what makes it the
               dangerous direction.
             </p>
           </div>
@@ -67,8 +67,8 @@ export default function Home() {
       <section className="mt-16">
         <h2 className="text-2xl font-bold">What it guarantees</h2>
         <p className="mt-2 max-w-3xl text-base-content/70">
-          Six invariants, each with the test that would catch it breaking. They are written before the code and they
-          are not weakened to match an implementation that failed one.
+          Six invariants, each with the test that would catch it breaking. They are written before the code and they are
+          not weakened to match an implementation that failed one.
         </p>
 
         <ul className="mt-6 space-y-3">
@@ -84,9 +84,7 @@ export default function Home() {
                   <p className="mt-1.5 text-sm text-base-content/70">
                     <span className="font-medium">Proven by:</span> {inv.provenBy}
                   </p>
-                  <p className="mt-0.5 font-mono text-xs text-base-content/50">
-                    packages/hardhat/test/{inv.testFile}
-                  </p>
+                  <p className="mt-0.5 font-mono text-xs text-base-content/50">packages/hardhat/test/{inv.testFile}</p>
                 </div>
               </div>
             </li>

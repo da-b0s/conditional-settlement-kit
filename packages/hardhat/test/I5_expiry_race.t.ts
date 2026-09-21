@@ -133,9 +133,7 @@ describe("I5 — expiry and settlement are mutually exclusive", () => {
       const { HBAR_USD, at18, chainNow } = await import("./helpers");
       const past = (await chainNow()) - 1;
       await expect(
-        d.registry
-          .connect(d.creator)
-          .createPolicy(d.beneficiary.address, HBAR_USD, at18("0.08"), true, 0n, past),
+        d.registry.connect(d.creator).createPolicy(d.beneficiary.address, HBAR_USD, at18("0.08"), true, 0n, past),
       ).to.be.revertedWithCustomError(d.registry, "ExpiryInPast");
     });
 

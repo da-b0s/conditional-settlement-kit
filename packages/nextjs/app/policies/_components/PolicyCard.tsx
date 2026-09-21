@@ -1,0 +1,194 @@
+"use client";
+
+import { useState } from "react";
+import { Address, HbarInput } from "@scaffold-hbar-ui/components";
+import { formatEther, formatUnits, keccak256, parseEther, toHex } from "viem";
+import { useAccount } from "wagmi";
+import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-hbar";
+import { TESTNET_FEEDS } from "~~/lib/settlement/feeds";
+
+/** Mirrors PolicyRegistry.State. Index is the on-chain enum value. */
+const STATES = ["None", "Draft", "Active", "Triggered", "Settled", "Expired", "Refunded"] as const;
+
+const BADGE: Record<string, string> = {
+  Draft: "badge-ghost",
+  Active: "badge-info",
+  Triggered: "badge-warning",
+  Settled: "badge-success",
+  Expired: "badge-neutral",
+  Refunded: "badge-neutral",
+};
+
+/** Reverse the keccak of the pair name, so a hash can be shown as "HBAR/USD". */
+const PAIR_BY_HASH = new Map(TESTNET_FEEDS.map(f => [keccak256(toHex(f.pair)).toLowerCase(), f.pair]));
+
+export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
+  const { address } = useAccount();
+  const [fundAmount, setFundAmount] = useState("");
+
+  const { data: policy, refetch } = useScaffoldReadContract({
+    contractName: "PolicyRegistry",
+    functionName: "getPolicy",
+    args: [policyId],
+    query: { refetchInterval: 10_000 },
+  });
+
+  const { writeContractAsync: writeRegistry, isMining: registryMining } = useScaffoldWriteContract({
+    contractName: "PolicyRegistry",
+  });
+  const { writeContractAsync: writeSettlement, isMining: settlementMining } = useScaffoldWriteContract({
+    contractName: "Settlement",
+  });
+
+  if (!policy) return <div className="skeleton h-32 w-full" />;
+
+  // getPolicy returns a struct that abitype widens to `any` for these fields,
+  // so `maxPayout - escrow` would come back a NUMBER and quietly lose
+  // precision on any value past 2^53 weibar — about 0.009 HBAR. Pin the two
+  // the component does arithmetic on.
+  const maxPayout = BigInt(policy.maxPayout);
+  const escrow = BigInt(policy.escrow);
+
+  const state = STATES[Number(policy.state)] ?? "Unknown";
+  const pair = PAIR_BY_HASH.get(policy.asset.toLowerCase());
+  const isCreator = address?.toLowerCase() === policy.creator.toLowerCase();
+  const deadline = new Date(Number(policy.expiry) * 1000);
+  const pastDeadline = deadline.getTime() < Date.now();
+  const busy = registryMining || settlementMining;
+
+  const run = async (fn: () => Promise<unknown>) => {
+    try {
+      await fn();
+    } finally {
+      // Refetch whether it succeeded or not: a revert still means the local
+      // view may be stale relative to why it reverted.
+      await refetch();
+    }
+  };
+
+  return (
+    <article className="rounded-box border border-base-300 p-5">
+      <header className="flex flex-wrap items-baseline justify-between gap-2">
+        <div className="flex items-baseline gap-3">
+          <span className="font-mono text-sm text-base-content/50">#{policyId.toString()}</span>
+          <span className={`badge ${BADGE[state] ?? "badge-ghost"}`}>{state}</span>
+        </div>
+        <span className="text-xs text-base-content/50">
+          {pastDeadline ? "deadline passed " : "expires "}
+          {deadline.toLocaleString()}
+        </span>
+      </header>
+
+      <p className="mt-3">
+        Pays <span className="font-semibold">{formatEther(maxPayout)} HBAR</span> when{" "}
+        <span className="font-semibold">{pair ?? "an asset"}</span> is{" "}
+        {policy.triggerAbove ? "at or above" : "at or below"}{" "}
+        <span className="font-semibold">{formatUnits(policy.threshold, 18)}</span>.
+      </p>
+
+      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+        <dt className="text-base-content/60">beneficiary</dt>
+        <dd>
+          <Address address={policy.beneficiary} size="xs" />
+        </dd>
+        <dt className="text-base-content/60">escrow held</dt>
+        <dd className="font-mono">{formatEther(escrow)} HBAR</dd>
+        {!pair && (
+          <>
+            <dt className="text-base-content/60">asset hash</dt>
+            <dd className="truncate font-mono text-xs">{policy.asset}</dd>
+          </>
+        )}
+        {BigInt(policy.triggeredAt) > 0n && (
+          <>
+            <dt className="text-base-content/60">settled on</dt>
+            <dd className="font-mono">
+              {formatUnits(policy.triggerPrice, 18)} observed{" "}
+              {new Date(Number(policy.triggeredAt) * 1000).toLocaleString()}
+            </dd>
+          </>
+        )}
+      </dl>
+
+      {/* Only the actions the state machine actually permits are rendered.
+          Showing a disabled Settle button on a refunded policy invites the
+          question "why can't I", which the state already answers. */}
+      <div className="mt-4 flex flex-wrap items-end gap-3">
+        {(state === "Draft" || state === "Active") && (
+          <div className="flex items-end gap-2">
+            <label className="form-control">
+              <span className="label-text mb-1 text-xs">Fund escrow</span>
+              <HbarInput placeholder="0.0" onValueChange={({ valueInNative }) => setFundAmount(valueInNative)} />
+            </label>
+            <button
+              className="btn btn-primary btn-sm"
+              disabled={busy || !fundAmount}
+              onClick={() =>
+                run(() =>
+                  writeRegistry({
+                    functionName: "fund",
+                    args: [policyId],
+                    // parseEther, not Number(x) * 1e18: the float route loses
+                    // precision above ~9 HBAR and silently under- or
+                    // over-funds an escrow by a few tinybar.
+                    value: parseEther(fundAmount),
+                  }),
+                )
+              }
+            >
+              Fund
+            </button>
+          </div>
+        )}
+
+        {state === "Active" && !pastDeadline && (
+          <button
+            className="btn btn-secondary btn-sm"
+            disabled={busy}
+            onClick={() => run(() => writeSettlement({ functionName: "trigger", args: [policyId] }))}
+          >
+            Settle now
+          </button>
+        )}
+
+        {state === "Active" && pastDeadline && (
+          <button
+            className="btn btn-outline btn-sm"
+            disabled={busy}
+            onClick={() => run(() => writeRegistry({ functionName: "expire", args: [policyId] }))}
+          >
+            Expire
+          </button>
+        )}
+
+        {state === "Expired" && isCreator && (
+          <button
+            className="btn btn-outline btn-sm"
+            disabled={busy}
+            onClick={() => run(() => writeRegistry({ functionName: "refund", args: [policyId] }))}
+          >
+            Take refund
+          </button>
+        )}
+
+        {state === "Expired" && !isCreator && (
+          <p className="text-sm text-base-content/60">Expired. Only the creator can take the refund.</p>
+        )}
+      </div>
+
+      {state === "Draft" && escrow < maxPayout && (
+        <p className="mt-3 text-sm text-warning">
+          Needs {formatEther(maxPayout - escrow)} HBAR more before it can activate. The contract will not let a policy
+          promise more than it holds.
+        </p>
+      )}
+
+      {state === "Active" && !pastDeadline && (
+        <p className="mt-3 text-xs text-base-content/60">
+          Anyone can press Settle — it succeeds only if the feed says the condition holds and the reading is inside this
+          feed&apos;s freshness bound. Otherwise it reverts and nothing changes.
+        </p>
+      )}
+    </article>
+  );
+};

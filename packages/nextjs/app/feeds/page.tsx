@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { DEFAULT_RPC, formatAge, formatAnswer, readLiveFeeds } from "~~/lib/settlement/feedReader";
 import { DECLARED_HEARTBEAT_SECONDS, TESTNET_FEEDS } from "~~/lib/settlement/feeds";
@@ -42,8 +42,8 @@ export default async function FeedsPage() {
           <div>
             <p className="font-semibold">Could not reach the Hedera testnet RPC endpoint.</p>
             <p className="text-sm">
-              {report.error}. The feed addresses and bounds below are still what this template would enforce — only
-              the live reading is missing.
+              {report.error}. The feed addresses and bounds below are still what this template would enforce — only the
+              live reading is missing.
             </p>
           </div>
         </div>
@@ -83,9 +83,9 @@ export default async function FeedsPage() {
           </p>
         ) : (
           <p className="mt-3 text-sm text-base-content/80">
-            At this moment every feed happens to be fresh enough that even a one-hour global bound would pass them
-            all. That is luck, not design — reload in an hour. The stablecoin feeds routinely sit past sixteen hours
-            while staying entirely in spec.
+            At this moment every feed happens to be fresh enough that even a one-hour global bound would pass them all.
+            That is luck, not design — reload in an hour. The stablecoin feeds routinely sit past sixteen hours while
+            staying entirely in spec.
           </p>
         )}
       </section>
@@ -123,7 +123,9 @@ export default async function FeedsPage() {
                   {feed.withinBound && !feed.withinGlobalTightBound && (
                     <div className="mt-1 text-xs text-warning">a 1h global bound would reject this</div>
                   )}
-                  {feed.carriedOver && <div className="mt-1 text-xs text-error">answer carried over from an older round</div>}
+                  {feed.carriedOver && (
+                    <div className="mt-1 text-xs text-error">answer carried over from an older round</div>
+                  )}
                 </td>
               </tr>
             ))}
@@ -151,8 +153,8 @@ export default async function FeedsPage() {
 
       <footer className="mt-6 space-y-1 text-xs text-base-content/60">
         <p>
-          Read from <span className="font-mono">{report.rpcUrl}</span> at{" "}
-          {new Date(report.readAt * 1000).toISOString()}. Cached for {revalidate} seconds.
+          Read from <span className="font-mono">{report.rpcUrl}</span> at {new Date(report.readAt * 1000).toISOString()}
+          . Cached for {revalidate} seconds.
         </p>
         <p>
           The same measurement runs as a test: <span className="font-mono">yarn test:live</span>. It asserts the shape

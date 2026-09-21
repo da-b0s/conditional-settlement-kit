@@ -3,7 +3,14 @@
 import React, { useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bars3Icon, BugAntIcon, ClipboardDocumentCheckIcon, MagnifyingGlassIcon, ScaleIcon, SignalIcon } from "@heroicons/react/24/outline";
+import {
+  Bars3Icon,
+  BugAntIcon,
+  ClipboardDocumentCheckIcon,
+  MagnifyingGlassIcon,
+  ScaleIcon,
+  SignalIcon,
+} from "@heroicons/react/24/outline";
 import { RainbowKitCustomConnectButton } from "~~/components/scaffold-hbar";
 import { useOutsideClick } from "~~/hooks/scaffold-hbar";
 

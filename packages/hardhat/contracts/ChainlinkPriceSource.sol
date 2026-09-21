@@ -97,7 +97,12 @@ contract ChainlinkPriceSource is IPriceSource {
         uint8 dec = IAggregatorV3(aggregator).decimals();
         if (dec > TARGET_DECIMALS) revert DecimalsTooLarge(dec, TARGET_DECIMALS);
 
-        _feeds[asset] = Feed({ aggregator: IAggregatorV3(aggregator), maxAge: maxAge, decimals: dec, registered: true });
+        _feeds[asset] = Feed({
+            aggregator: IAggregatorV3(aggregator),
+            maxAge: maxAge,
+            decimals: dec,
+            registered: true
+        });
         emit FeedRegistered(asset, aggregator, maxAge, dec);
     }
 
@@ -127,9 +132,7 @@ contract ChainlinkPriceSource is IPriceSource {
         Feed storage f = _feeds[asset];
         if (!f.registered) revert FeedNotRegistered(asset);
 
-        (uint80 roundId, int256 answer, , uint256 updatedAt, uint80 answeredInRound) = f
-            .aggregator
-            .latestRoundData();
+        (uint80 roundId, int256 answer, , uint256 updatedAt, uint80 answeredInRound) = f.aggregator.latestRoundData();
 
         // A carried-over answer from an older round is not a fresh reading,
         // however recent updatedAt looks.

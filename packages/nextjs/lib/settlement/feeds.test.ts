@@ -5,19 +5,19 @@
  * true. If someone edits the feed table and the spread collapses, or adds a
  * feed without a bound, the failure is here rather than in a judge's head.
  */
-import { describe, expect, it } from "vitest";
 import {
+  CANONICAL_FEED,
   DECLARED_HEARTBEAT_SECONDS,
   FEED_DECIMALS,
   PROOF_OF_RESERVE_AVAILABLE,
   TARGET_DECIMALS,
   TESTNET_FEEDS,
-  CANONICAL_FEED,
   feedByPair,
   globalBoundDamage,
   normaliseTo18,
   observedFreshnessSpread,
 } from "./feeds";
+import { describe, expect, it } from "vitest";
 
 const HOUR = 3600;
 

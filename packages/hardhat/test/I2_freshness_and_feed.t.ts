@@ -92,9 +92,10 @@ describe("I2 — allowed feed, per-feed freshness, correct decimals", () => {
     it("a bound cannot be set so large that it disables the check", async () => {
       const agg = await ethers.deployContract("MockAggregatorV3", [8, atFeedDecimals("1"), 0]);
       await agg.waitForDeployment();
-      await expect(
-        d.source.registerFeed(DAI_USD, await agg.getAddress(), 365 * DAY),
-      ).to.be.revertedWithCustomError(d.source, "MaxAgeTooLarge");
+      await expect(d.source.registerFeed(DAI_USD, await agg.getAddress(), 365 * DAY)).to.be.revertedWithCustomError(
+        d.source,
+        "MaxAgeTooLarge",
+      );
     });
 
     it("staleness is measured against the chain clock as it advances", async () => {
@@ -148,9 +149,10 @@ describe("I2 — allowed feed, per-feed freshness, correct decimals", () => {
     it("refuses to register a feed reporting more decimals than the target", async () => {
       const agg = await ethers.deployContract("MockAggregatorV3", [20, 1, 0]);
       await agg.waitForDeployment();
-      await expect(
-        d.source.registerFeed(DAI_USD, await agg.getAddress(), HOUR),
-      ).to.be.revertedWithCustomError(d.source, "DecimalsTooLarge");
+      await expect(d.source.registerFeed(DAI_USD, await agg.getAddress(), HOUR)).to.be.revertedWithCustomError(
+        d.source,
+        "DecimalsTooLarge",
+      );
     });
   });
 

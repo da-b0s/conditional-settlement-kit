@@ -19,9 +19,9 @@
  * all. That is the claim the design rests on, and it is the one worth
  * defending against drift.
  */
-import { describe, expect, it } from "vitest";
 import { DEFAULT_RPC, formatAge, formatAnswer, readLiveFeeds } from "./feedReader";
 import { DECLARED_HEARTBEAT_SECONDS, FEED_DECIMALS, TESTNET_FEEDS } from "./feeds";
+import { describe, expect, it } from "vitest";
 
 describe("the seven feeds, live on Hedera testnet", () => {
   it("re-takes the measurement and prints it", async () => {

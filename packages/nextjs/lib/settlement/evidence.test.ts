@@ -14,14 +14,8 @@
  * path serialise"; they are "here is a plausible mistake a future contributor
  * will make, does the builder stop it".
  */
+import { EvidenceRejected, FORBIDDEN_KEYS, assertPublishable, buildEvidence, serialiseEvidence } from "./evidence";
 import { describe, expect, it } from "vitest";
-import {
-  EvidenceRejected,
-  FORBIDDEN_KEYS,
-  assertPublishable,
-  buildEvidence,
-  serialiseEvidence,
-} from "./evidence";
 
 const ASSET = "0x" + "ab".repeat(32);
 const TX = "0x" + "cd".repeat(32);
@@ -39,7 +33,16 @@ describe("I6 — what reaches a public topic", () => {
 
   it("carries only the keys it declares", () => {
     const r = buildEvidence({ ...base, price: 89_100_000_000_000_000n, observedAt: 1_789_000_000, txHash: TX });
-    expect(Object.keys(r).sort()).toEqual(["assetHash", "at", "kind", "observedAt", "policyId", "price", "txHash", "v"]);
+    expect(Object.keys(r).sort()).toEqual([
+      "assetHash",
+      "at",
+      "kind",
+      "observedAt",
+      "policyId",
+      "price",
+      "txHash",
+      "v",
+    ]);
   });
 
   it("omits optional fields rather than writing null", () => {

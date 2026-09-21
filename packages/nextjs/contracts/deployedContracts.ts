@@ -5,35 +5,543 @@
 import { GenericContractsDeclaration } from "~~/utils/scaffold-hbar/contract";
 
 const deployedContracts = {
-  296: {
-    AssociationProbe: {
-      address: "0x57631c41cDFB0ef2A7D4ef83b35c38558FA3e2D7",
+  31337: {
+    ChainlinkPriceSource: {
+      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
       abi: [
+        {
+          inputs: [],
+          stateMutability: "nonpayable",
+          type: "constructor",
+        },
         {
           inputs: [
             {
-              internalType: "int64",
-              name: "responseCode",
-              type: "int64",
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
             },
             {
-              internalType: "string",
-              name: "meaning",
-              type: "string",
+              internalType: "uint8",
+              name: "registered",
+              type: "uint8",
+            },
+            {
+              internalType: "uint8",
+              name: "nowReported",
+              type: "uint8",
             },
           ],
-          name: "HtsCallFailed",
+          name: "DecimalsChanged",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint8",
+              name: "reported",
+              type: "uint8",
+            },
+            {
+              internalType: "uint8",
+              name: "target",
+              type: "uint8",
+            },
+          ],
+          name: "DecimalsTooLarge",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+          ],
+          name: "FeedNotRegistered",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+            {
+              internalType: "uint80",
+              name: "roundId",
+              type: "uint80",
+            },
+            {
+              internalType: "uint80",
+              name: "answeredInRound",
+              type: "uint80",
+            },
+          ],
+          name: "IncompleteRound",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "MaxAgeRequired",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint64",
+              name: "given",
+              type: "uint64",
+            },
+            {
+              internalType: "uint64",
+              name: "limit",
+              type: "uint64",
+            },
+          ],
+          name: "MaxAgeTooLarge",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+            {
+              internalType: "int256",
+              name: "answer",
+              type: "int256",
+            },
+          ],
+          name: "NegativePrice",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "NotOwner",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+            {
+              internalType: "uint256",
+              name: "updatedAt",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "nowTs",
+              type: "uint256",
+            },
+            {
+              internalType: "uint64",
+              name: "maxAge",
+              type: "uint64",
+            },
+          ],
+          name: "ObservationStale",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "ZeroAddress",
+          type: "error",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "aggregator",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint64",
+              name: "maxAge",
+              type: "uint64",
+            },
+            {
+              indexed: false,
+              internalType: "uint8",
+              name: "decimals",
+              type: "uint8",
+            },
+          ],
+          name: "FeedRegistered",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+          ],
+          name: "FeedRemoved",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "from",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+          ],
+          name: "OwnerChanged",
+          type: "event",
+        },
+        {
+          inputs: [],
+          name: "MAX_CONFIGURABLE_AGE",
+          outputs: [
+            {
+              internalType: "uint64",
+              name: "",
+              type: "uint64",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "TARGET_DECIMALS",
+          outputs: [
+            {
+              internalType: "uint8",
+              name: "",
+              type: "uint8",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+          ],
+          name: "latest",
+          outputs: [
+            {
+              components: [
+                {
+                  internalType: "uint256",
+                  name: "value",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint64",
+                  name: "observedAt",
+                  type: "uint64",
+                },
+                {
+                  internalType: "bytes32",
+                  name: "feedId",
+                  type: "bytes32",
+                },
+              ],
+              internalType: "struct IPriceSource.Observation",
+              name: "",
+              type: "tuple",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+          ],
+          name: "maxAgeOf",
+          outputs: [
+            {
+              internalType: "uint64",
+              name: "",
+              type: "uint64",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "owner",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+            {
+              internalType: "address",
+              name: "aggregator",
+              type: "address",
+            },
+            {
+              internalType: "uint64",
+              name: "maxAge",
+              type: "uint64",
+            },
+          ],
+          name: "registerFeed",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+          ],
+          name: "removeFeed",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+          ],
+          name: "supportsAsset",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+          ],
+          name: "transferOwnership",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+      ],
+      inheritedFunctions: {
+        latest: "contracts/IPriceSource.sol",
+        maxAgeOf: "contracts/IPriceSource.sol",
+        supportsAsset: "contracts/IPriceSource.sol",
+      },
+      deployedOnBlock: 1,
+    },
+    PolicyRegistry: {
+      address: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+      abi: [
+        {
+          inputs: [],
+          stateMutability: "nonpayable",
+          type: "constructor",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+            {
+              internalType: "uint64",
+              name: "expiry",
+              type: "uint64",
+            },
+            {
+              internalType: "uint256",
+              name: "nowTs",
+              type: "uint256",
+            },
+          ],
+          name: "AlreadyExpired",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint64",
+              name: "expiry",
+              type: "uint64",
+            },
+            {
+              internalType: "uint256",
+              name: "nowTs",
+              type: "uint256",
+            },
+          ],
+          name: "ExpiryInPast",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+            {
+              internalType: "enum PolicyRegistry.State",
+              name: "from",
+              type: "uint8",
+            },
+            {
+              internalType: "enum PolicyRegistry.State",
+              name: "to",
+              type: "uint8",
+            },
+          ],
+          name: "IllegalTransition",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "NotCreator",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "NotOwner",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "NotSettlement",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+            {
+              internalType: "uint64",
+              name: "expiry",
+              type: "uint64",
+            },
+            {
+              internalType: "uint256",
+              name: "nowTs",
+              type: "uint256",
+            },
+          ],
+          name: "NotYetExpired",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "NothingToFund",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "maxPayout",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "escrow",
+              type: "uint256",
+            },
+          ],
+          name: "PayoutExceedsEscrow",
           type: "error",
         },
         {
           inputs: [
             {
               internalType: "address",
-              name: "systemContract",
+              name: "to",
               type: "address",
             },
+            {
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
           ],
-          name: "SystemContractUnreachable",
+          name: "TransferFailed",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+          ],
+          name: "UnknownPolicy",
           type: "error",
         },
         {
@@ -47,29 +555,185 @@ const deployedContracts = {
             {
               indexed: true,
               internalType: "address",
-              name: "account",
+              name: "from",
               type: "address",
             },
             {
               indexed: true,
               internalType: "address",
-              name: "token",
+              name: "to",
+              type: "address",
+            },
+          ],
+          name: "OwnerChanged",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "creator",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "beneficiary",
               type: "address",
             },
             {
               indexed: false,
-              internalType: "int64",
-              name: "responseCode",
-              type: "int64",
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "threshold",
+              type: "uint256",
             },
             {
               indexed: false,
               internalType: "bool",
-              name: "success",
+              name: "triggerAbove",
               type: "bool",
             },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "maxPayout",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint64",
+              name: "expiry",
+              type: "uint64",
+            },
           ],
-          name: "AssociationProbed",
+          name: "PolicyCreated",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+          ],
+          name: "PolicyExpired",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "escrow",
+              type: "uint256",
+            },
+          ],
+          name: "PolicyFunded",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "creator",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+          ],
+          name: "PolicyRefunded",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "beneficiary",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+          ],
+          name: "PolicySettled",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "price",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint64",
+              name: "observedAt",
+              type: "uint64",
+            },
+          ],
+          name: "PolicyTriggered",
           type: "event",
         },
         {
@@ -78,198 +742,624 @@ const deployedContracts = {
             {
               indexed: true,
               internalType: "address",
-              name: "account",
+              name: "from",
               type: "address",
             },
             {
-              indexed: false,
-              internalType: "int64",
-              name: "responseCode",
-              type: "int64",
-            },
-            {
-              indexed: false,
-              internalType: "bool",
-              name: "authorized",
-              type: "bool",
+              indexed: true,
+              internalType: "address",
+              name: "to",
+              type: "address",
             },
           ],
-          name: "AuthorizationProbed",
+          name: "SettlementChanged",
           type: "event",
         },
         {
-          inputs: [],
-          name: "HAS",
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "price",
+              type: "uint256",
+            },
+          ],
+          name: "conditionMet",
           outputs: [
             {
-              internalType: "contract IHederaAccountService",
+              internalType: "bool",
               name: "",
-              type: "address",
+              type: "bool",
             },
           ],
           stateMutability: "view",
           type: "function",
         },
         {
-          inputs: [],
-          name: "HTS",
-          outputs: [
-            {
-              internalType: "contract IHtsAssociation",
-              name: "",
-              type: "address",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
           inputs: [
             {
               internalType: "address",
-              name: "token",
+              name: "beneficiary",
               type: "address",
             },
-          ],
-          name: "associateSelf",
-          outputs: [
-            {
-              internalType: "int64",
-              name: "responseCode",
-              type: "int64",
-            },
-          ],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "token",
-              type: "address",
-            },
-          ],
-          name: "associateUnchecked",
-          outputs: [
-            {
-              internalType: "int64",
-              name: "responseCode",
-              type: "int64",
-            },
-          ],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "token",
-              type: "address",
-            },
-          ],
-          name: "inspectToken",
-          outputs: [
-            {
-              internalType: "bool",
-              name: "isHtsToken",
-              type: "bool",
-            },
-            {
-              internalType: "bool",
-              name: "isFungible",
-              type: "bool",
-            },
-          ],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "account",
-              type: "address",
-            },
-            {
-              internalType: "bytes",
-              name: "messageHash",
-              type: "bytes",
-            },
-            {
-              internalType: "bytes",
-              name: "signature",
-              type: "bytes",
-            },
-          ],
-          name: "isAuthorized",
-          outputs: [
-            {
-              internalType: "bool",
-              name: "authorized",
-              type: "bool",
-            },
-          ],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "candidate",
-              type: "address",
-            },
-          ],
-          name: "isLongZero",
-          outputs: [
-            {
-              internalType: "bool",
-              name: "",
-              type: "bool",
-            },
-          ],
-          stateMutability: "pure",
-          type: "function",
-        },
-        {
-          inputs: [
             {
               internalType: "bytes32",
-              name: "messageHash",
+              name: "asset",
               type: "bytes32",
             },
             {
-              internalType: "uint8",
-              name: "v",
+              internalType: "uint256",
+              name: "threshold",
+              type: "uint256",
+            },
+            {
+              internalType: "bool",
+              name: "triggerAbove",
+              type: "bool",
+            },
+            {
+              internalType: "uint256",
+              name: "maxPayout",
+              type: "uint256",
+            },
+            {
+              internalType: "uint64",
+              name: "expiry",
+              type: "uint64",
+            },
+          ],
+          name: "createPolicy",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+          ],
+          name: "expire",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+          ],
+          name: "fund",
+          outputs: [],
+          stateMutability: "payable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+          ],
+          name: "getPolicy",
+          outputs: [
+            {
+              components: [
+                {
+                  internalType: "address",
+                  name: "creator",
+                  type: "address",
+                },
+                {
+                  internalType: "address",
+                  name: "beneficiary",
+                  type: "address",
+                },
+                {
+                  internalType: "bytes32",
+                  name: "asset",
+                  type: "bytes32",
+                },
+                {
+                  internalType: "uint256",
+                  name: "maxPayout",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "escrow",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "threshold",
+                  type: "uint256",
+                },
+                {
+                  internalType: "bool",
+                  name: "triggerAbove",
+                  type: "bool",
+                },
+                {
+                  internalType: "uint64",
+                  name: "expiry",
+                  type: "uint64",
+                },
+                {
+                  internalType: "enum PolicyRegistry.State",
+                  name: "state",
+                  type: "uint8",
+                },
+                {
+                  internalType: "uint64",
+                  name: "triggeredAt",
+                  type: "uint64",
+                },
+                {
+                  internalType: "uint256",
+                  name: "triggerPrice",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct PolicyRegistry.Policy",
+              name: "",
+              type: "tuple",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "price",
+              type: "uint256",
+            },
+            {
+              internalType: "uint64",
+              name: "observedAt",
+              type: "uint64",
+            },
+          ],
+          name: "markTriggered",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "nextPolicyId",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "owner",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+          ],
+          name: "refund",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+          ],
+          name: "setSettlement",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+          ],
+          name: "settle",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "settlement",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+          ],
+          name: "stateOf",
+          outputs: [
+            {
+              internalType: "enum PolicyRegistry.State",
+              name: "",
               type: "uint8",
             },
-            {
-              internalType: "bytes32",
-              name: "r",
-              type: "bytes32",
-            },
-            {
-              internalType: "bytes32",
-              name: "s",
-              type: "bytes32",
-            },
           ],
-          name: "recoverWithEcrecover",
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "totalEscrowed",
           outputs: [
             {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
               internalType: "address",
-              name: "recovered",
+              name: "to",
               type: "address",
             },
           ],
-          stateMutability: "pure",
+          name: "transferOwnership",
+          outputs: [],
+          stateMutability: "nonpayable",
           type: "function",
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 40720066,
+      deployedOnBlock: 3,
+    },
+    Settlement: {
+      address: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      abi: [
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "registry_",
+              type: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "constructor",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "price",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "threshold",
+              type: "uint256",
+            },
+            {
+              internalType: "bool",
+              name: "triggerAbove",
+              type: "bool",
+            },
+          ],
+          name: "ConditionNotMet",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+          ],
+          name: "NoPriceSource",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "NotOwner",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+            {
+              internalType: "address",
+              name: "source",
+              type: "address",
+            },
+          ],
+          name: "SourceDoesNotSupport",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "ZeroAddress",
+          type: "error",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "from",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+          ],
+          name: "OwnerChanged",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "source",
+              type: "address",
+            },
+          ],
+          name: "PriceSourceSet",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "price",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint64",
+              name: "observedAt",
+              type: "uint64",
+            },
+          ],
+          name: "TriggerAccepted",
+          type: "event",
+        },
+        {
+          inputs: [],
+          name: "owner",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+          ],
+          name: "preview",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "price",
+              type: "uint256",
+            },
+            {
+              internalType: "uint64",
+              name: "observedAt",
+              type: "uint64",
+            },
+            {
+              internalType: "bool",
+              name: "conditionMet",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          name: "priceSourceOf",
+          outputs: [
+            {
+              internalType: "contract IPriceSource",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "registry",
+          outputs: [
+            {
+              internalType: "contract PolicyRegistry",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "asset",
+              type: "bytes32",
+            },
+            {
+              internalType: "address",
+              name: "source",
+              type: "address",
+            },
+          ],
+          name: "setPriceSource",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+          ],
+          name: "transferOwnership",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+          ],
+          name: "trigger",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "paid",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 5,
     },
   },
 } as const;

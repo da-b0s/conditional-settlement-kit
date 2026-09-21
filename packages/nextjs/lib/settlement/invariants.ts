@@ -41,8 +41,7 @@ export const INVARIANTS: readonly Invariant[] = [
     id: "I2",
     statement:
       "A trigger must use an allowed provider and feed, satisfy that feed's own freshness bound, and match the policy's units and decimals.",
-    provenBy:
-      "Submit an observation older than that feed's bound; reverts. Submit from an unregistered feed; reverts.",
+    provenBy: "Submit an observation older than that feed's bound; reverts. Submit from an unregistered feed; reverts.",
     testFile: "I2_freshness_and_feed.t.ts",
   },
   {

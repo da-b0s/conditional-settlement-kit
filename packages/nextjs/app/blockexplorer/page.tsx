@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { PaginationButton, SearchBar, TransactionsTable } from "./_components";
 import type { NextPage } from "next";
 import { Block, Transaction, TransactionReceipt } from "viem";
 import { hardhat } from "viem/chains";
 import { useFetchBlocks } from "~~/hooks/scaffold-hbar";
 import { useTargetNetwork } from "~~/hooks/scaffold-hbar/useTargetNetwork";
-import Link from "next/link";
 import { notification } from "~~/utils/scaffold-hbar";
 import { useAllContracts } from "~~/utils/scaffold-hbar/contractsData";
 
@@ -129,8 +129,8 @@ const BlockExplorer: NextPage = () => {
             <div>
               <h3 className="text-sm font-semibold mb-1.5">The evidence trail</h3>
               <p className="text-xs opacity-60 mb-2">
-                Every state change this kit makes is written to a public consensus topic. Reading it back needs no
-                key and no permission — that is the point of putting it there.
+                Every state change this kit makes is written to a public consensus topic. Reading it back needs no key
+                and no permission — that is the point of putting it there.
               </p>
               <Link href="/evidence" className="link link-hover text-sm text-primary">
                 Open the evidence reader →
@@ -140,8 +140,8 @@ const BlockExplorer: NextPage = () => {
             <div>
               <h3 className="text-sm font-semibold mb-1.5">The live feeds</h3>
               <p className="text-xs opacity-60 mb-2">
-                The seven Chainlink feeds this kit can settle against, read from the chain on load, with the age each
-                is reporting against the bound enforced for it.
+                The seven Chainlink feeds this kit can settle against, read from the chain on load, with the age each is
+                reporting against the bound enforced for it.
               </p>
               <Link href="/feeds" className="link link-hover text-sm text-primary">
                 Open the feed reader →

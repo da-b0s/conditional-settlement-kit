@@ -27,7 +27,7 @@
  *
  * Framework-free. See invariants.ts.
  */
-import { TESTNET_FEEDS, type PriceFeed } from "./feeds";
+import { type PriceFeed, TESTNET_FEEDS } from "./feeds";
 
 /** `latestRoundData()` */
 const LATEST_ROUND_DATA = "0xfeaf968c";

@@ -17,7 +17,7 @@
  */
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { DAI_USD, DAY, HBAR_USD, HOUR, State, advance, atFeedDecimals, createFundedPolicy, deploySystem, type Deployed } from "./helpers";
+import { DAY, HBAR_USD, State, advance, createFundedPolicy, deploySystem, type Deployed } from "./helpers";
 
 describe("I4 — only authorised paths change final state", () => {
   let d: Deployed;
@@ -47,9 +47,10 @@ describe("I4 — only authorised paths change final state", () => {
 
     it("a stranger cannot mark a policy triggered", async () => {
       const policyId = await createFundedPolicy(d);
-      await expect(
-        d.registry.connect(d.stranger).markTriggered(policyId, 1n, 1n),
-      ).to.be.revertedWithCustomError(d.registry, "NotSettlement");
+      await expect(d.registry.connect(d.stranger).markTriggered(policyId, 1n, 1n)).to.be.revertedWithCustomError(
+        d.registry,
+        "NotSettlement",
+      );
     });
 
     it("only the creator may take a refund", async () => {
@@ -71,9 +72,10 @@ describe("I4 — only authorised paths change final state", () => {
 
   describe("configuration is restricted to the owner", () => {
     it("a stranger cannot re-point the settlement contract", async () => {
-      await expect(
-        d.registry.connect(d.stranger).setSettlement(d.stranger.address),
-      ).to.be.revertedWithCustomError(d.registry, "NotOwner");
+      await expect(d.registry.connect(d.stranger).setSettlement(d.stranger.address)).to.be.revertedWithCustomError(
+        d.registry,
+        "NotOwner",
+      );
     });
 
     it("a stranger cannot swap the price source", async () => {
@@ -92,9 +94,10 @@ describe("I4 — only authorised paths change final state", () => {
     it("ownership transfer works and the old owner loses access", async () => {
       await d.registry.connect(d.owner).transferOwnership(d.creator.address);
       expect(await d.registry.owner()).to.equal(d.creator.address);
-      await expect(
-        d.registry.connect(d.owner).setSettlement(d.stranger.address),
-      ).to.be.revertedWithCustomError(d.registry, "NotOwner");
+      await expect(d.registry.connect(d.owner).setSettlement(d.stranger.address)).to.be.revertedWithCustomError(
+        d.registry,
+        "NotOwner",
+      );
     });
 
     it("ownership cannot be transferred to the zero address", async () => {

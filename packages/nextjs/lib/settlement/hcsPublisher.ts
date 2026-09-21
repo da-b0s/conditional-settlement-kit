@@ -87,7 +87,11 @@ async function clientFor(operator: OperatorCredentials) {
   const network = operator.network ?? "testnet";
 
   const client =
-    network === "mainnet" ? Client.forMainnet() : network === "previewnet" ? Client.forPreviewnet() : Client.forTestnet();
+    network === "mainnet"
+      ? Client.forMainnet()
+      : network === "previewnet"
+        ? Client.forPreviewnet()
+        : Client.forTestnet();
 
   let key;
   try {
@@ -170,10 +174,7 @@ export async function publishEvidence(
 
   const { client } = await clientFor(operator);
   try {
-    const response = await new TopicMessageSubmitTransaction()
-      .setTopicId(topicId)
-      .setMessage(message)
-      .execute(client);
+    const response = await new TopicMessageSubmitTransaction().setTopicId(topicId).setMessage(message).execute(client);
 
     const receipt = await response.getReceipt(client);
     return {

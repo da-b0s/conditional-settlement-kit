@@ -215,7 +215,11 @@ async function scheduleClient(operator: OperatorCredentials) {
   const { AccountId, Client, PrivateKey } = await import("@hiero-ledger/sdk");
   const network = operator.network ?? "testnet";
   const client =
-    network === "mainnet" ? Client.forMainnet() : network === "previewnet" ? Client.forPreviewnet() : Client.forTestnet();
+    network === "mainnet"
+      ? Client.forMainnet()
+      : network === "previewnet"
+        ? Client.forPreviewnet()
+        : Client.forTestnet();
 
   let key;
   try {

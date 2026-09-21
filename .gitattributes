@@ -1,0 +1,13 @@
+# Normalise line endings. A template must check out clean on a judge's
+# machine whatever OS it was authored on.
+* text=auto eol=lf
+
+# Binaries and the vendored yarn release must never be touched.
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+.yarn/releases/** binary
+.yarn/plugins/** binary

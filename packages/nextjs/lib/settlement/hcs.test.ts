@@ -10,9 +10,9 @@
  * something other than what we hoped for, because that is what an audit trail
  * has to survive to be worth anything.
  */
-import { describe, expect, it } from "vitest";
 import { buildEvidence, serialiseEvidence } from "./evidence";
 import { TopicReadFailed, findGaps, parseEvidence, readEvidence, topicUrl, trailForPolicy } from "./hcs";
+import { describe, expect, it } from "vitest";
 
 const ASSET = "0x" + "ab".repeat(32);
 
@@ -60,7 +60,10 @@ describe("reading a topic", () => {
     // that also carries the prefix produces /api/v1/api/v1 and a 404 — the
     // exact bug that silently truncates a trail to its first page.
     const { impl, calls } = fakeFetch([
-      { messages: [message(1, record(1))], links: { next: "/api/v1/topics/0.0.5005/messages?limit=100&timestamp=gt:1" } },
+      {
+        messages: [message(1, record(1))],
+        links: { next: "/api/v1/topics/0.0.5005/messages?limit=100&timestamp=gt:1" },
+      },
       { messages: [message(2, record(2))], links: { next: null } },
     ]);
     const trail = await readEvidence("0.0.5005", { fetchImpl: impl });
@@ -135,10 +138,13 @@ describe("parsing one message", () => {
   it.each([
     ["not JSON", "{oops"],
     ["not an object", "42"],
-    ['unknown schema version 2', JSON.stringify({ v: 2, kind: "settled", policyId: 1, at: 1, assetHash: ASSET })],
+    ["unknown schema version 2", JSON.stringify({ v: 2, kind: "settled", policyId: 1, at: 1, assetHash: ASSET })],
     ['unknown kind "exploded"', JSON.stringify({ v: 1, kind: "exploded", policyId: 1, at: 1, assetHash: ASSET })],
     ["policyId is not an integer", JSON.stringify({ v: 1, kind: "settled", policyId: "1", at: 1, assetHash: ASSET })],
-    ["assetHash is not a 32-byte hex hash", JSON.stringify({ v: 1, kind: "settled", policyId: 1, at: 1, assetHash: "HBAR/USD" })],
+    [
+      "assetHash is not a 32-byte hex hash",
+      JSON.stringify({ v: 1, kind: "settled", policyId: 1, at: 1, assetHash: "HBAR/USD" }),
+    ],
   ])("refuses %s", (reason, body) => {
     const outcome = parseEvidence(body);
     expect(outcome).toEqual({ reason });

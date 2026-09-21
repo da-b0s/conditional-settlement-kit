@@ -1,0 +1,60 @@
+{
+  "name": "scaffold-hbar-conditional-settlement",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/hardhat",
+      "packages/nextjs"
+    ]
+  },
+  "scripts": {
+    "format": "yarn next:format && yarn hardhat:format",
+    "hardhat:account": "yarn workspace @sh/hardhat account",
+    "hardhat:account:generate": "yarn workspace @sh/hardhat account:generate",
+    "hardhat:account:import": "yarn workspace @sh/hardhat account:import",
+    "hardhat:account:reveal-pk": "yarn workspace @sh/hardhat account:reveal-pk",
+    "hardhat:chain": "yarn workspace @sh/hardhat chain",
+    "hardhat:check-types": "yarn workspace @sh/hardhat check-types",
+    "hardhat:clean": "yarn workspace @sh/hardhat clean",
+    "hardhat:compile": "yarn workspace @sh/hardhat compile",
+    "hardhat:deploy": "yarn workspace @sh/hardhat deploy",
+    "hardhat:flatten": "yarn workspace @sh/hardhat flatten",
+    "hardhat:fork": "yarn workspace @sh/hardhat fork",
+    "hardhat:format": "yarn workspace @sh/hardhat format",
+    "hardhat:lint": "yarn workspace @sh/hardhat lint",
+    "hardhat:lint-staged": "yarn workspace @sh/hardhat lint-staged",
+    "hardhat:test": "yarn workspace @sh/hardhat test",
+    "hardhat:verify": "yarn workspace @sh/hardhat verify",
+    "hardhat:verify:testnet": "yarn workspace @sh/hardhat verify:testnet",
+    "hardhat:verify:mainnet": "yarn workspace @sh/hardhat verify:mainnet",
+    "lint": "yarn next:lint && yarn hardhat:lint",
+    "next:build": "yarn workspace @sh/nextjs build",
+    "next:check-types": "yarn workspace @sh/nextjs check-types",
+    "next:dev": "yarn workspace @sh/nextjs dev",
+    "next:format": "yarn workspace @sh/nextjs format",
+    "next:lint": "yarn workspace @sh/nextjs lint",
+    "next:serve": "yarn workspace @sh/nextjs serve",
+    "next:start": "yarn workspace @sh/nextjs start",
+    "postinstall": "husky",
+    "precommit": "lint-staged",
+    "lint-staged": "lint-staged",
+    "next:test": "yarn workspace @sh/nextjs test",
+    "test": "yarn next:test && yarn hardhat:test",
+    "hardhat:verify:sourcify": "yarn workspace @sh/hardhat verify:sourcify",
+    "harness:validate": "hedera-harness validate",
+    "harness:doctor": "hedera-harness doctor",
+    "hardhat:test:ci": "yarn workspace @sh/hardhat test:ci"
+  },
+  "packageManager": "yarn@3.2.3",
+  "devDependencies": {
+    "@playwright/mcp": "0.0.79",
+    "hedera-harness": "^1.2.2",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "playwright": "^1.61.1"
+  },
+  "engines": {
+    "node": ">=20.18.3"
+  }
+}

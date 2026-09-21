@@ -1,0 +1,6 @@
+{
+  "name": "Preflight",
+  "short_name": "Preflight",
+  "description": "Acquire and hold any Hedera token without hitting TOKEN_NOT_ASSOCIATED_TO_ACCOUNT.",
+  "iconPath": "preflight-mark.svg"
+}

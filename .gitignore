@@ -1,0 +1,80 @@
+# ---------------------------------------------------------------
+# Secrets — gate item G8. These rules exist BEFORE any file that
+# could hold a key. Deleting a committed .env does not help: git
+# keeps history, and bots scrape GitHub for Hedera keys in seconds.
+# ---------------------------------------------------------------
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.local
+**/.env.*.local
+
+# ---------------------------------------------------------------
+# Dependencies
+# ---------------------------------------------------------------
+node_modules/
+
+# ---------------------------------------------------------------
+# Yarn — the release binary and plugins MUST stay committed, or a
+# freshly scaffolded project cannot install at all. Do not
+# "simplify" this block to a bare .yarn/ ignore.
+# ---------------------------------------------------------------
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+
+# ---------------------------------------------------------------
+# Harness runtime — recipe and validators ARE committed (G10),
+# run artefacts are not.
+# ---------------------------------------------------------------
+.harness/runs/
+.harness/runtime/
+.harness/skills/
+.skill-cache/
+
+# ---------------------------------------------------------------
+# MCP — dev-only tooling config. Never ship this in a template:
+# the harness pins its own @playwright/mcp via npx and a committed
+# config fights that pin on a judge's machine.
+# ---------------------------------------------------------------
+.mcp.json
+.cursor/mcp.json
+
+# ---------------------------------------------------------------
+# Build artefacts
+# ---------------------------------------------------------------
+.next/
+out/
+build/
+dist/
+artifacts/
+cache/
+typechain-types/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# ---------------------------------------------------------------
+# Tooling caches
+# ---------------------------------------------------------------
+.eslintcache
+.vercel
+
+# ---------------------------------------------------------------
+# Editors / OS
+# ---------------------------------------------------------------
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Design and logo working files. Process artefacts, not part of the template:
+# a developer who scaffolds this should not receive 8MB of previews and zips.
+/design-handoff/
+.harness/spec.tier35.generated.yaml
+packages/hardhat/.env.tier35-stash

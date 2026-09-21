@@ -6,9 +6,9 @@ import "~~/styles/globals.css";
 import { getMetadata } from "~~/utils/scaffold-hbar/getMetadata";
 
 export const metadata = getMetadata({
-  title: "Preflight",
+  title: "Conditional Settlement Kit",
   description:
-    "Acquire and hold any Hedera token without hitting TOKEN_NOT_ASSOCIATED_TO_ACCOUNT. Preflight picks the right one of four association mechanisms and explains why.",
+    "Escrow a payout, attach it to a price condition, and let anyone settle it once the condition holds. Per-feed freshness bounds, a swappable oracle, and a public evidence trail on Hedera.",
 });
 
 const ScaffoldHbarApp = ({ children }: { children: React.ReactNode }) => {

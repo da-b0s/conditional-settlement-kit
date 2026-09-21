@@ -212,7 +212,7 @@ export async function scheduleFate(
 }
 
 async function scheduleClient(operator: OperatorCredentials) {
-  const { Client, PrivateKey } = await import("@hiero-ledger/sdk");
+  const { AccountId, Client, PrivateKey } = await import("@hiero-ledger/sdk");
   const network = operator.network ?? "testnet";
   const client =
     network === "mainnet" ? Client.forMainnet() : network === "previewnet" ? Client.forPreviewnet() : Client.forTestnet();
@@ -229,7 +229,9 @@ async function scheduleClient(operator: OperatorCredentials) {
   }
 
   client.setOperator(operator.accountId, key);
-  return { client, accountId: operator.accountId };
+  // setPayerAccountId wants an AccountId, not the string form. Passing the
+  // string compiles under a loose signature and fails at runtime.
+  return { client, accountId: AccountId.fromString(operator.accountId) };
 }
 
 /** Hedera's statuses are precise and unreadable. These are the ones this path provokes. */

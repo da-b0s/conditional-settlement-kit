@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useRef } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowDownTrayIcon, Bars3Icon, BeakerIcon, BugAntIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, BugAntIcon, ClipboardDocumentCheckIcon, MagnifyingGlassIcon, ScaleIcon, SignalIcon } from "@heroicons/react/24/outline";
 import { RainbowKitCustomConnectButton } from "~~/components/scaffold-hbar";
 import { useOutsideClick } from "~~/hooks/scaffold-hbar";
 
@@ -20,16 +19,22 @@ export const menuLinks: HeaderMenuLink[] = [
     href: "/",
   },
   {
-    // The credential-free inspection route. Deliberately second, before
-    // anything that asks for a wallet.
-    label: "Diagnose",
-    href: "/diagnose",
-    icon: <BeakerIcon className="h-4 w-4" />,
+    // The two credential-free routes come first, before anything that asks
+    // for a wallet. Feeds is the evidence for the central design claim and a
+    // visitor should be able to check it before being asked for anything.
+    label: "Feeds",
+    href: "/feeds",
+    icon: <SignalIcon className="h-4 w-4" />,
   },
   {
-    label: "Acquire",
-    href: "/acquire",
-    icon: <ArrowDownTrayIcon className="h-4 w-4" />,
+    label: "Evidence",
+    href: "/evidence",
+    icon: <ClipboardDocumentCheckIcon className="h-4 w-4" />,
+  },
+  {
+    label: "Policies",
+    href: "/policies",
+    icon: <ScaleIcon className="h-4 w-4" />,
   },
   {
     label: "Debug Contracts",
@@ -95,22 +100,20 @@ export const Header = () => {
           </ul>
         </details>
         <Link href="/" passHref className="hidden lg:flex items-center gap-3 ml-4 mr-6 shrink-0">
-          <div className="flex relative w-9 h-9">
-            {/* Two files rather than one with currentColor: next/image renders an
-                <img>, which does not inherit the surrounding text colour. */}
-            <Image alt="Preflight" className="cursor-pointer dark:hidden" fill src="/preflight-mark.svg" />
-            <Image
-              alt=""
-              aria-hidden="true"
-              className="cursor-pointer hidden dark:block"
-              fill
-              src="/preflight-mark-dark.svg"
-            />
-          </div>
+          {/* Inline rather than next/image: an <img> does not inherit the
+              surrounding text colour, so a single currentColor mark needs to
+              be real SVG in the document to work in both themes. */}
+          <svg viewBox="0 0 32 32" className="w-9 h-9 shrink-0 text-primary" aria-hidden="true" fill="none">
+            <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="2" opacity="0.35" />
+            <path d="M16 6v20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <path d="M8 12h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <circle cx="8" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+            <circle cx="24" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+          </svg>
           <div className="flex flex-col">
-            <span className="font-bold leading-tight text-base">Preflight</span>
+            <span className="font-bold leading-tight text-base">Settlement Kit</span>
             <span className="text-[10px] tracking-wider uppercase text-base-content/50 font-medium">
-              Built on Hedera
+              Conditional settlement on Hedera
             </span>
           </div>
         </Link>

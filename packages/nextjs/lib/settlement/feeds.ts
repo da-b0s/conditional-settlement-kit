@@ -53,6 +53,17 @@
  * Tune it with your own observations before trusting it with money. The
  * product claim is that the bound must be PER FEED and configurable — not
  * that these particular constants are correct for your use.
+ *
+ * How much these move is not hypothetical. Re-read a few hours later the same
+ * day, the spread was 228x rather than 116x, DAI had gone from 23.1 hours to
+ * 27 minutes, and the feed a 1-hour global bound would have wrongly rejected
+ * was BTC/USD at 1.6 hours — a feed that was 18 minutes old in the sample
+ * above. Every specific number here moved. The structural finding did not:
+ * some feeds are minutes old, others are hours old, all of them are in spec,
+ * and no single bound fits them. That is what the design rests on.
+ *
+ * feedReader.integration.test.ts re-takes this measurement live and asserts
+ * the structure rather than the constants. Run `yarn test:live` to see it.
  * ---------------------------------------------------------------------------
  *
  * Framework-free. See invariants.ts.

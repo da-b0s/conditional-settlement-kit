@@ -82,10 +82,61 @@ describe("reading a topic", () => {
   });
 
   it("publishes the URL it used, so the claim is checkable", async () => {
+    // fakeFetch answers 200 to every URL, including the existence probe that
+    // an empty result triggers, so this reads as a real but empty topic.
     const { impl } = fakeFetch([{ messages: [], links: { next: null } }]);
     const trail = await readEvidence("0.0.5005", { fetchImpl: impl });
     expect(trail.source).toBe(topicUrl("0.0.5005", "testnet"));
     expect(trail.source).toContain("testnet.mirrornode.hedera.com");
+  });
+});
+
+describe("an empty topic versus a topic that does not exist", () => {
+  /**
+   * The messages endpoint answers 200 with an empty list for BOTH, so the two
+   * are indistinguishable from that call alone. Getting this wrong makes the
+   * audit page say "this topic exists and has no messages" about a typo — i.e.
+   * report that a settlement produced no evidence when the real answer is
+   * that you are looking at the wrong topic.
+   */
+  function routedFetch(routes: { messages: unknown; topicStatus: number }) {
+    const seen: string[] = [];
+    const impl = (async (url: string) => {
+      const href = String(url);
+      seen.push(href);
+      if (href.includes("/messages")) {
+        return { ok: true, status: 200, json: async () => routes.messages } as unknown as Response;
+      }
+      return {
+        ok: routes.topicStatus < 400,
+        status: routes.topicStatus,
+        json: async () => ({}),
+      } as unknown as Response;
+    }) as unknown as typeof fetch;
+    return { impl, seen };
+  }
+
+  it("reports a genuinely empty topic as empty", async () => {
+    const { impl } = routedFetch({ messages: { messages: [], links: { next: null } }, topicStatus: 200 });
+    const trail = await readEvidence("0.0.5005", { fetchImpl: impl });
+    expect(trail.entries).toHaveLength(0);
+  });
+
+  it("reports a topic that does not exist as missing, not as empty", async () => {
+    const { impl } = routedFetch({ messages: { messages: [], links: { next: null } }, topicStatus: 404 });
+    await expect(readEvidence("0.0.5005", { fetchImpl: impl })).rejects.toThrow(/does not exist on testnet/);
+  });
+
+  it("does not pay for the existence check when messages came back", async () => {
+    // The common path stays one request per page. Probing every read would
+    // double the traffic to a public endpoint for no benefit.
+    const { impl, seen } = routedFetch({
+      messages: { messages: [message(1, record(1))], links: { next: null } },
+      topicStatus: 404,
+    });
+    const trail = await readEvidence("0.0.5005", { fetchImpl: impl });
+    expect(trail.entries).toHaveLength(1);
+    expect(seen.filter(u => !u.includes("/messages"))).toHaveLength(0);
   });
 });
 

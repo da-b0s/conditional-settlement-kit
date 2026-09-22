@@ -105,10 +105,27 @@ export default async function EvidencePage({ searchParams }: { searchParams: Pro
   );
 }
 
+/**
+ * How many unparseable messages to actually show.
+ *
+ * Found by pointing this page at a real stranger's topic: it returned a
+ * thousand NAT-telemetry messages, all correctly refused, and rendered every
+ * one of them. The refusal was right and the page was useless. An auditor
+ * needs to know how many there were and what they look like, not to scroll
+ * past a thousand of them to reach the records that matter.
+ */
+const UNREADABLE_SHOWN = 3;
+
 function Trail({ trail }: { trail: EvidenceTrail }) {
   const policyIds = Array.from(
     new Set(trail.entries.map(e => e.record?.policyId).filter((id): id is number => id !== undefined)),
   ).sort((a, b) => a - b);
+
+  // Readable records are the audit; show all of them. Unreadable ones are
+  // context; show a few and say how many were left out.
+  const readable = trail.entries.filter(e => e.record);
+  const unreadable = trail.entries.filter(e => e.unparsed);
+  const shownUnreadable = unreadable.slice(0, UNREADABLE_SHOWN);
 
   return (
     <section className="mt-8">
@@ -129,9 +146,9 @@ function Trail({ trail }: { trail: EvidenceTrail }) {
           <div className="text-sm">
             {trail.unreadable > 0 && (
               <p>
-                <span className="font-semibold">{trail.unreadable}</span> message
-                {trail.unreadable === 1 ? " is" : "s are"} not readable as evidence. They are shown below rather than
-                filtered out — a trail that hides what it could not parse is not an audit.
+                <span className="font-semibold">{trail.unreadable}</span> of {trail.entries.length} message
+                {trail.entries.length === 1 ? "" : "s"} could not be read as evidence. They are counted below rather
+                than filtered out — a trail that hides what it could not parse is not an audit.
               </p>
             )}
             {trail.gaps.length > 0 && (
@@ -150,56 +167,73 @@ function Trail({ trail }: { trail: EvidenceTrail }) {
         </p>
       )}
 
-      <ol className="space-y-2">
-        {trail.entries.map(entry => (
-          <li
-            key={`${entry.sequenceNumber}-${entry.consensusTimestamp}`}
-            className="rounded-box border border-base-300 p-4"
-          >
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="font-mono text-xs text-base-content/50">#{entry.sequenceNumber}</span>
-              {entry.record ? (
-                <span className="badge badge-primary badge-sm">{entry.record.kind}</span>
-              ) : (
-                <span className="badge badge-warning badge-sm">unreadable</span>
-              )}
-              <span className="text-xs text-base-content/50">{consensusToIso(entry.consensusTimestamp)}</span>
-            </div>
+      {readable.length > 0 && (
+        <ol className="space-y-2">
+          {readable.map(entry => (
+            <li
+              key={`${entry.sequenceNumber}-${entry.consensusTimestamp}`}
+              className="rounded-box border border-base-300 p-4"
+            >
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span className="font-mono text-xs text-base-content/50">#{entry.sequenceNumber}</span>
+                <span className="badge badge-primary badge-sm">{entry.record!.kind}</span>
+                <span className="text-xs text-base-content/50">{consensusToIso(entry.consensusTimestamp)}</span>
+              </div>
 
-            {entry.record ? (
               <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
                 <dt className="text-base-content/60">policy</dt>
-                <dd className="font-mono">{entry.record.policyId}</dd>
+                <dd className="font-mono">{entry.record!.policyId}</dd>
                 <dt className="text-base-content/60">asset</dt>
-                <dd className="truncate font-mono text-xs">{entry.record.assetHash}</dd>
-                {entry.record.price !== undefined && (
+                <dd className="truncate font-mono text-xs">{entry.record!.assetHash}</dd>
+                {entry.record!.price !== undefined && (
                   <>
                     <dt className="text-base-content/60">price (18dp)</dt>
-                    <dd className="font-mono">{entry.record.price}</dd>
+                    <dd className="font-mono">{entry.record!.price}</dd>
                   </>
                 )}
-                {entry.record.observedAt !== undefined && (
+                {entry.record!.observedAt !== undefined && (
                   <>
                     <dt className="text-base-content/60">feed updated</dt>
-                    <dd>{new Date(entry.record.observedAt * 1000).toISOString()}</dd>
+                    <dd>{new Date(entry.record!.observedAt * 1000).toISOString()}</dd>
                   </>
                 )}
-                {entry.record.txHash && (
+                {entry.record!.txHash && (
                   <>
                     <dt className="text-base-content/60">tx</dt>
-                    <dd className="truncate font-mono text-xs">{entry.record.txHash}</dd>
+                    <dd className="truncate font-mono text-xs">{entry.record!.txHash}</dd>
                   </>
                 )}
               </dl>
-            ) : (
-              <div className="mt-2 text-sm">
-                <p className="text-base-content/70">{entry.unparsed?.reason}</p>
-                <pre className="mt-1 overflow-x-auto rounded bg-base-200 p-2 text-xs">{entry.unparsed?.raw}</pre>
-              </div>
-            )}
-          </li>
-        ))}
-      </ol>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      {unreadable.length > 0 && (
+        <details className="mt-4 rounded-box border border-base-300 p-4">
+          <summary className="cursor-pointer text-sm font-semibold">
+            {unreadable.length} message{unreadable.length === 1 ? "" : "s"} that{" "}
+            {unreadable.length === 1 ? "is" : "are"} not evidence
+            {unreadable.length > UNREADABLE_SHOWN && ` — showing the first ${UNREADABLE_SHOWN}`}
+          </summary>
+          <p className="mt-2 text-sm text-base-content/70">
+            Anyone holding a topic&apos;s submit key can write anything to it, and a topic created without one accepts
+            messages from anybody. These are counted rather than hidden so the trail cannot look cleaner than it is.
+          </p>
+          <ol className="mt-3 space-y-2">
+            {shownUnreadable.map(entry => (
+              <li key={`${entry.sequenceNumber}-${entry.consensusTimestamp}`} className="text-sm">
+                <div className="flex flex-wrap items-baseline gap-x-3">
+                  <span className="font-mono text-xs text-base-content/50">#{entry.sequenceNumber}</span>
+                  <span className="badge badge-warning badge-sm">{entry.unparsed!.reason}</span>
+                  <span className="text-xs text-base-content/50">{consensusToIso(entry.consensusTimestamp)}</span>
+                </div>
+                <pre className="mt-1 overflow-x-auto rounded bg-base-200 p-2 text-xs">{entry.unparsed!.raw}</pre>
+              </li>
+            ))}
+          </ol>
+        </details>
+      )}
 
       {policyIds.length > 0 && (
         <div className="mt-8">

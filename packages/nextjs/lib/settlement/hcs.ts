@@ -183,6 +183,24 @@ export async function readEvidence(
     path = payload.links?.next ?? null;
   }
 
+  // THE MESSAGES ENDPOINT DOES NOT 404 FOR A TOPIC THAT DOES NOT EXIST.
+  //
+  // It answers 200 with `{"messages":[],"links":{"next":null}}`, which is
+  // byte-for-byte what a real, empty topic returns. Taking that at face value
+  // makes this page tell an auditor "this topic exists and has no messages"
+  // about a topic that was never created — so a typo in a topic id reads as
+  // "the settlement produced no evidence". That is the worst thing an audit
+  // tool can get wrong.
+  //
+  // The entity endpoint does 404 properly, so ask it — but only when the list
+  // came back empty. The normal path stays one request.
+  if (entries.length === 0) {
+    const probe = await doFetch(`${base}/api/v1/topics/${topicId}`);
+    if (probe.status === 404) {
+      throw new TopicReadFailed(`topic ${topicId} does not exist on ${network}`, 404);
+    }
+  }
+
   return {
     topicId,
     network,

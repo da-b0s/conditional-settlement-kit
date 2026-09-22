@@ -34,7 +34,10 @@ const KIND_TO_STATE: Record<string, PolicyState> = {
 
 export default async function EvidencePage({ searchParams }: { searchParams: Promise<{ topic?: string }> }) {
   const { topic } = await searchParams;
-  const topicId = topic?.trim();
+  // A deployment can name its own topic, so /evidence opens on something
+  // useful rather than an empty field. An explicit ?topic= still wins —
+  // auditing someone else's settlement is the normal case, not the exception.
+  const topicId = topic?.trim() || process.env.NEXT_PUBLIC_EVIDENCE_TOPIC?.trim() || undefined;
 
   let trail: EvidenceTrail | null = null;
   let error: string | null = null;

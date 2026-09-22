@@ -44,7 +44,9 @@
     "hardhat:verify:sourcify": "yarn workspace @sh/hardhat verify:sourcify",
     "harness:validate": "hedera-harness validate",
     "harness:doctor": "hedera-harness doctor",
-    "hardhat:test:ci": "yarn workspace @sh/hardhat test:ci"
+    "hardhat:test:ci": "yarn workspace @sh/hardhat test:ci",
+  "evidence:topic": "yarn workspace @sh/hardhat evidence:topic",
+  "next:test:live": "yarn workspace @sh/nextjs test:live"
   },
   "packageManager": "yarn@3.2.3",
   "devDependencies": {

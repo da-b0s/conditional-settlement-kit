@@ -21,7 +21,7 @@
     "verify:testnet": "hardhat verify --network hederaTestnet",
     "verify:mainnet": "hardhat verify --network hederaMainnet",
     "verify:sourcify": "ts-node scripts/verifySourcify.ts",
-    "evidence": "ts-node scripts/generateEvidence.ts",
+    "evidence:topic": "ts-node scripts/createEvidenceTopic.ts",
     "test:ci": "hardhat test",
     "harness:tier35": "ts-node scripts/harnessTier35.ts"
   },

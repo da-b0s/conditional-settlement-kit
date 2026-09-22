@@ -84,7 +84,7 @@ export default function Home() {
                   <p className="mt-1.5 text-sm text-base-content/70">
                     <span className="font-medium">Proven by:</span> {inv.provenBy}
                   </p>
-                  <p className="mt-0.5 font-mono text-xs text-base-content/50">packages/hardhat/test/{inv.testFile}</p>
+                  <p className="mt-0.5 font-mono text-xs text-base-content/50">{inv.testFile}</p>
                 </div>
               </div>
             </li>

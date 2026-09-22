@@ -25,7 +25,14 @@ export interface Invariant {
   statement: string;
   /** The test that would catch it breaking. Names the failing direction. */
   provenBy: string;
-  /** The test file that holds it. */
+  /**
+   * The test file that holds it, as a path from the repository root.
+   *
+   * A full path rather than a bare filename because I6's proof does NOT live
+   * beside the others: it is a unit suite against the evidence builder, not a
+   * contract test. A shared prefix assumed by the UI produced a link to a
+   * file that had never existed.
+   */
   testFile: string;
 }
 
@@ -35,38 +42,39 @@ export const INVARIANTS: readonly Invariant[] = [
     statement:
       "A policy settles at most once. Repeated evidence, repeated clicks or a replayed observation cannot pay twice.",
     provenBy: "Call settle twice with the same observation; the second reverts.",
-    testFile: "I1_settles_once.t.ts",
+    testFile: "packages/hardhat/test/I1_settles_once.t.ts",
   },
   {
     id: "I2",
     statement:
       "A trigger must use an allowed provider and feed, satisfy that feed's own freshness bound, and match the policy's units and decimals.",
     provenBy: "Submit an observation older than that feed's bound; reverts. Submit from an unregistered feed; reverts.",
-    testFile: "I2_freshness_and_feed.t.ts",
+    testFile: "packages/hardhat/test/I2_freshness_and_feed.t.ts",
   },
   {
     id: "I3",
     statement: "Payout never exceeds funded escrow. Fees and rounding are bounded and documented.",
     provenBy: "Configure a payout larger than escrow; reverts.",
-    testFile: "I3_payout_bounded.t.ts",
+    testFile: "packages/hardhat/test/I3_payout_bounded.t.ts",
   },
   {
     id: "I4",
     statement: "Only authorised paths change final state. Emergency controls are explicit and test-covered.",
     provenBy: "Unauthorised caller attempts settle; reverts.",
-    testFile: "I4_authorisation.t.ts",
+    testFile: "packages/hardhat/test/I4_authorisation.t.ts",
   },
   {
     id: "I5",
     statement: "Expiry and settlement cannot both succeed. Both are terminal and mutually exclusive.",
     provenBy: "Race expiry-then-settle and settle-then-expiry; exactly one wins in each case.",
-    testFile: "I5_expiry_race.t.ts",
+    testFile: "packages/hardhat/test/I5_expiry_race.t.ts",
   },
   {
     id: "I6",
     statement: "Public evidence contains no secrets or personal data — hashes and minimal summaries only.",
-    provenBy: "Read the HCS topic contents back and assert on their shape.",
-    testFile: "I6_evidence_shape.t.ts",
+    provenBy:
+      "Adversarial tests against the builder: every forbidden field, and every value shaped like an address, an account id or a key, is refused. Reading a real topic back exercises the same shape from the other side.",
+    testFile: "packages/nextjs/lib/settlement/evidence.test.ts",
   },
 ] as const;
 

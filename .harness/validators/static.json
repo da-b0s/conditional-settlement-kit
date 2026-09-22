@@ -1,0 +1,57 @@
+{
+  "name": "gate-static",
+  "description": "Eligibility gate items G2, G3, G4, G8 and G9 as machine checks, plus the two project-specific rules that are easiest to break by accident.",
+  "fileAssertions": {
+    "required": [
+      "README.md",
+      "AGENTS.md",
+      "CLAUDE.md",
+      "template.json",
+      "LICENSE",
+      "package.json",
+      "packages/nextjs/package.json",
+      "packages/hardhat/package.json",
+      ".harness/spec.yaml",
+      "packages/nextjs/lib/settlement/invariants.ts",
+      "packages/hardhat/contracts/IPriceSource.sol",
+      "packages/hardhat/contracts/ChainlinkPriceSource.sol",
+      "packages/hardhat/contracts/PolicyRegistry.sol",
+      "packages/hardhat/contracts/Settlement.sol",
+      "packages/hardhat/test/I1_settles_once.t.ts",
+      "packages/hardhat/test/I2_freshness_and_feed.t.ts",
+      "packages/hardhat/test/I3_payout_bounded.t.ts",
+      "packages/hardhat/test/I4_authorisation.t.ts",
+      "packages/hardhat/test/I5_expiry_race.t.ts",
+      "packages/nextjs/lib/settlement/evidence.test.ts"
+    ],
+    "forbidden": [
+      ".env",
+      "packages/nextjs/.env",
+      "packages/hardhat/.env",
+      ".mcp.json",
+      "packages/nextjs/hooks/settlement"
+    ]
+  },
+  "textAssertions": [
+    {
+      "file": "README.md",
+      "contains": ["yarn install", "npm create scaffold-hbar", "hashscan.io", "per feed"]
+    },
+    {
+      "file": "AGENTS.md",
+      "contains": ["useScaffoldReadContract", "HederaAddressInput", "@hiero-ledger/sdk"]
+    },
+    {
+      "file": "packages/hardhat/contracts/ChainlinkPriceSource.sol",
+      "contains": ["MaxAgeRequired"]
+    }
+  ],
+  "secretScan": {
+    "patterns": [
+      {
+        "name": "private-key-assignment",
+        "pattern": "(PRIVATE_KEY|OPERATOR_KEY|MNEMONIC|SECRET)\\s*[:=]\\s*[\"']?(0x)?(?!0{32})[0-9a-fA-F]{32,}"
+      }
+    ]
+  }
+}

@@ -1,0 +1,127 @@
+# Tier 2 — boot the app and walk every route a reader is told about.
+#
+# Four checks per route: it loads, it returns a non-error status, the body
+# hydrates to meaningful text, and the browser console logs no errors. A route
+# listed in the README that fails any of those is a gate-item G6 failure, so
+# this file and the README's route table must list the same routes.
+#
+# Run it with:  npx hedera-harness validate
+
+server:
+  # ---------------------------------------------------------------------
+  # THREE THINGS IN THIS ONE STRING ARE LOad-BEARING. None is a trick.
+  #
+  # 1. `next start`, NOT `next dev`.
+  #    The harness gives a dev server 30 seconds — hardcoded — to print its
+  #    "Local: http://localhost:3000" line, and `server.timeoutMs` below does
+  #    not extend it (that governs a later readiness poll). A cold `next dev`
+  #    compile takes 12-20s and exceeds 30s under the load of a harness run,
+  #    producing "Dev server did not report a Local URL within 30000ms" —
+  #    which reads like a broken app when it is merely slow to compile.
+  #    `next start` serves the build the baseline already produced, so it is
+  #    listening in about a second, and it exercises the same output a judge
+  #    would deploy.
+  #
+  #    NOTE THE SCRIPT NAME. In scaffold-hbar, `next:start` runs `next dev`
+  #    and `next:serve` runs `next start` — the opposite of what both names
+  #    suggest.
+  #
+  # 2. THE VENDORED YARN, not a bare `yarn`.
+  #    The harness resolves the package manager itself for baseline.commands,
+  #    but hands THIS string straight to a shell (`spawn(command, { shell:
+  #    true })`). On a machine without a global yarn — which is every machine
+  #    relying on this repo's vendored Yarn 3, since `corepack enable` needs
+  #    Administrator on Windows — cmd.exe answers "'yarn' is not recognized"
+  #    and the gate reports only "Playwright gate failed before route checks
+  #    completed" with routes=0, hiding the cause entirely.
+  #
+  # 3. The leading `echo`, for Windows.
+  #    The harness spawns this with `detached: true`, which on Windows gives
+  #    cmd.exe a NEW CONSOLE; anything cmd.exe launches attaches to that
+  #    console rather than inheriting the pipes. Measured: a bare `echo`
+  #    (which cmd.exe runs itself) arrives intact, while a grandchild process
+  #    produces zero bytes. So the real server's "Local:" line can never reach
+  #    the harness on Windows.
+  #
+  #    This does NOT fake readiness. The harness treats the URL only as an
+  #    address, then polls it itself (server.timeoutMs below) and will not
+  #    start Playwright until the server genuinely answers. If the server
+  #    never comes up the gate still fails — on the poll instead of on URL
+  #    detection. Harmless on POSIX, where the echo is one extra line.
+  # ---------------------------------------------------------------------
+  command: "echo Local: http://localhost:3000 && node .yarn/releases/yarn-3.2.3.cjs next:serve"
+  url: http://localhost:3000
+  timeoutMs: 180000
+
+defaults:
+  timeoutMs: 45000
+  # /feeds reads seven Chainlink proxies over JSON-RPC and /evidence reads the
+  # mirror node, both on the server before responding. Hashio under load is
+  # not fast, and the default 30s is too tight for the first route hit.
+  hydrationTimeoutMs: 45000
+  minBodyTextLength: 200
+  failOnConsoleError: true
+
+forbidden:
+  # Text that must never reach a user. Each is a failure mode this template
+  # specifically claims to have handled.
+  visibleText:
+    # A raw unhandled error reaching the page.
+    - "Application error"
+    - "Internal Server Error"
+    - "Unhandled Runtime Error"
+    # An object rendered where a string was expected.
+    - "[object Object]"
+    # A bigint formatted through a float path, or a price parsed at the wrong
+    # precision. Deliberately NOT "NaN" as a bare string: the gate matches
+    # with a CASE-INSENSITIVE SUBSTRING, so "NaN" also matches "finance",
+    # "governance" and "banana". A check that goes red for reasons the project
+    # cannot control trains the reader to ignore the gate.
+    - "NaN HBAR"
+    - "Infinity"
+    # The evidence page must never claim a topic exists when the mirror node
+    # has not confirmed it. This string only renders after the entity
+    # endpoint answers non-404.
+    - "undefined messages on"
+
+routes:
+  - name: home
+    path: /
+
+  # THE CENTRAL CLAIM, with no wallet. This route reads all seven Chainlink
+  # proxies live and renders their ages against the per-feed bounds. If it
+  # ever regresses into needing a wallet, the credential-free promise is gone
+  # and this is where it shows.
+  - name: feeds
+    path: /feeds
+
+  # The evidence reader with nothing selected. Must invite a topic id rather
+  # than erroring.
+  - name: evidence-empty
+    path: /evidence
+
+  # A REAL testnet topic that is not ours: 1,000 messages of somebody's NAT
+  # telemetry. Every message must be reported as not-evidence rather than
+  # silently dropped, and the page must stay usable rather than rendering a
+  # thousand entries. Both of those were bugs found by pointing the page at
+  # exactly this topic.
+  - name: evidence-foreign-topic
+    path: /evidence?topic=0.0.4318417
+
+  # A topic id that does not exist. The mirror node answers 200 with an empty
+  # message list here — identical to a real empty topic — so this route proves
+  # the page says "does not exist" rather than "exists and has no messages".
+  - name: evidence-missing-topic
+    path: /evidence?topic=0.0.999999999
+
+  # Renders without a wallet and without a deployment, stating which network
+  # it looked at and what to run. A connect-wallet dead end here is a failure.
+  - name: policies
+    path: /policies
+
+  # Ships with scaffold-hbar and is kept deliberately.
+  - name: debug-contracts
+    path: /debug
+
+  - name: block-explorer
+    path: /blockexplorer

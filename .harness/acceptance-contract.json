@@ -1,0 +1,125 @@
+{
+  "name": "conditional-settlement-kit",
+  "summary": "The kit escrows a payout, attaches it to a price condition, and lets anyone settle it once the condition holds. Its distinguishing claim is that a staleness bound belongs to the individual feed rather than to the system, and that the whole thing is auditable by someone holding no credentials at all. The assertions below grade those claims, not the prose around them.",
+  "notes": [
+    "Only C11 is executableWithTestSigner. Every such assertion spends real testnet HBAR and adds minutes to the run, so the on-chain journey is proven once, end to end, rather than in pieces.",
+    "The credential-free assertions come first and are weighted critical on purpose. A stranger with no wallet, no key and no .env must see true live data and be able to audit a settlement. That is the claim most templates cannot make and the one that fails most quietly if it regresses.",
+    "FEED AGES MOVE, AND MOVE A LOT. Read on 21 September 2026 the spread between freshest and stalest feed was 116x; hours later the same day it was 228x, DAI/USD had gone from 23.1 hours to 27 minutes, and the feed a 1-hour global bound would wrongly reject had changed from three stablecoins to BTC/USD. Do NOT assert specific ages or a specific spread. Assert the STRUCTURE: several feeds are minutes old, several are hours old, all are inside their declared heartbeat, and no single bound serves them all.",
+    "An assertion that fails because the CHAIN changed is not the same as one that fails because the APP changed. Say which in the evidence."
+  ],
+  "assertions": [
+    {
+      "id": "C1",
+      "statement": "/feeds renders live oracle data with no wallet connected, no key and no .env file present.",
+      "howToVerify": "Delete or rename any .env, then navigate to /feeds without connecting a wallet. At least five of the seven feeds must show a price, a decimals figure and an age. The footer must name the RPC endpoint it read from and the timestamp it read at. Confirm the browser console logs no errors. A connect-wallet prompt, an empty table, or a page that only shows the static configuration is a failure.",
+      "severity": "critical",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C2",
+      "statement": "The per-feed staleness argument is computed from the live reading, not printed from a constant.",
+      "howToVerify": "On /feeds, read the 'Why each feed carries its own staleness bound' panel. The spread figure it states must be consistent with the ages in the table below it — compute max(age)/min(age) yourself from the rendered rows and confirm it matches. Any feed flagged 'a 1h global bound would reject this' must have an age above one hour AND be marked fresh against its own bound. If no feed currently qualifies, the panel must say so rather than naming feeds that are not in that state.",
+      "severity": "critical",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C3",
+      "statement": "Every feed is inside its declared heartbeat, which is what makes a single global bound unsafe rather than merely imprecise.",
+      "howToVerify": "For each row on /feeds, confirm the age is below 24 hours — the heartbeat every feed on this network declares. The point being graded is that no feed is misbehaving and the spread happens anyway. Cross-check any two rows directly against the chain: eth_call latestRoundData() on the proxy address shown and compare updatedAt.",
+      "severity": "critical",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C4",
+      "statement": "The contract refuses to register a feed without a staleness bound, and there is no global default to fall back on.",
+      "howToVerify": "Read packages/hardhat/contracts/ChainlinkPriceSource.sol. Confirm registerFeed reverts with MaxAgeRequired when maxAge is zero, that no constant serves as a default maxAge anywhere in the file, and that maxAge is stored per asset in the Feed struct. Then run `yarn hardhat:test` and confirm the I2 suite contains a passing test named for a feed being registered without a bound.",
+      "severity": "critical",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C5",
+      "statement": "/evidence reads a public consensus topic back with no credentials, and distinguishes a topic that does not exist from one that is empty.",
+      "howToVerify": "Navigate to /evidence?topic=0.0.999999999 — an id that does not exist. The page must say the topic does not exist on testnet. It must NOT say the topic exists and has no messages. This matters because the mirror node's messages endpoint answers 200 with an empty list for both cases, so the wrong answer here is a confident one. Then navigate to /evidence?topic=0.0.4318417, a real foreign topic, and confirm messages are read back.",
+      "severity": "critical",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C6",
+      "statement": "Messages that are not evidence records are counted and shown, never silently filtered out.",
+      "howToVerify": "Navigate to /evidence?topic=0.0.4318417. This topic carries roughly a thousand messages of unrelated telemetry. The page must state how many could not be read as evidence, out of how many total, and must make a sample of them inspectable. It must remain usable — a page that renders all thousand entries is a failure, and so is one that reports zero messages. Compare the count against the mirror node directly: GET /api/v1/topics/0.0.4318417/messages.",
+      "severity": "high",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C7",
+      "statement": "The evidence builder refuses to publish anything that should not be public, checked against the serialised form rather than the object.",
+      "howToVerify": "Read packages/nextjs/lib/settlement/evidence.ts. Confirm buildEvidence constructs its result field by field and never spreads its input, and that assertPublishable runs against JSON.stringify output rather than iterating keys. Run `yarn next:test` and confirm the I6 suite passes, including the cases that smuggle an EVM address, a Hedera account id, an email and a bare 32-byte hex string into a record.",
+      "severity": "critical",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C8",
+      "statement": "The oracle is genuinely swappable: the contract that moves money never names Chainlink.",
+      "howToVerify": "Grep packages/hardhat/contracts/Settlement.sol and PolicyRegistry.sol for 'Chainlink' and 'AggregatorV3'. Both must return nothing. Settlement must reach prices only through the IPriceSource interface. Confirm Settlement holds no value: it must have no payable function and no balance-moving code — the registry pays.",
+      "severity": "critical",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C9",
+      "statement": "Settlement and expiry are mutually exclusive, and both are terminal.",
+      "howToVerify": "Run `yarn hardhat:test`. The I5 suite must pass and must contain both orderings — settle-then-expire and expire-then-settle — each asserting the second one reverts. Read PolicyRegistry.sol and confirm every state change routes through a single _transition function, and that the Settled and Refunded states have no outgoing transitions.",
+      "severity": "critical",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C10",
+      "statement": "The deploy script wires the registry to the settlement contract and verifies that wiring rather than assuming it.",
+      "howToVerify": "Read packages/hardhat/deploy/00_deploy_settlement.ts. Confirm it calls registry.setSettlement and then re-reads registry.settlement and throws if it does not match. Run `yarn hardhat:deploy --network hardhat` and confirm the output includes the wiring-verified line. A deployment that stops one call short produces a system where policies fund cleanly and can never pay, which is why this is checked rather than trusted.",
+      "severity": "high",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C11",
+      "statement": "A policy can be created, funded, and settled against a live Chainlink feed on Hedera testnet, and the payout reaches the beneficiary.",
+      "howToVerify": "Deploy to testnet. Create a policy against HBAR/USD with a threshold the current price already satisfies — read /feeds first to pick one — a payout of 1 HBAR, and a deadline an hour out. Fund it with 1 HBAR and confirm it reads Active. From a DIFFERENT account that is not the creator or the beneficiary, call trigger(). Confirm the policy reads Settled, the beneficiary's balance rose by 1 HBAR, and a second trigger() reverts. The settlement being pushed by an unrelated account is the part being graded: it proves the beneficiary does not depend on the creator's goodwill.",
+      "severity": "critical",
+      "walletRequired": true,
+      "verifiableWithoutCredentials": false,
+      "executableWithTestSigner": true
+    },
+    {
+      "id": "C12",
+      "statement": "A stale reading cannot settle a policy, and the refusal names the feed's own bound.",
+      "howToVerify": "This is proven offline rather than on testnet, because no live feed can be forced stale on demand. Run `yarn hardhat:test` and confirm the I2 suite passes a test that advances the chain clock past one feed's bound and asserts trigger() reverts with ObservationStale carrying that feed's maxAge — and a companion test showing the same age is acceptable for a feed whose bound is longer. Two feeds, same age, different verdicts, is the assertion.",
+      "severity": "critical",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C13",
+      "statement": "Scheduled expiry is a convenience and never the guarantee.",
+      "howToVerify": "Read packages/nextjs/lib/settlement/schedule.ts and PolicyRegistry.expire(). Confirm expire() is permissionless and checks the deadline itself, so a policy past its deadline can be expired by anyone whether or not a schedule exists. Confirm the I5 suite contains a passing test that anyone may expire a policy past its deadline, and that no test in the repository depends on HSS. Confirm describeScheduleError translates SCHEDULED_TRANSACTION_NOT_IN_WHITELIST into a message stating the policy still expires.",
+      "severity": "high",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C14",
+      "statement": "The template's own documentation cannot point at things that do not exist.",
+      "howToVerify": "Run `yarn next:test`. The invariants suite must pass, including the check that every invariant's testFile resolves to a real file on disk. Then confirm the home page renders those same paths from lib/settlement/invariants.ts rather than from hardcoded prose, by changing one testFile value and observing the page change.",
+      "severity": "medium",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    }
+  ]
+}

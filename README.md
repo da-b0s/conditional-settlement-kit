@@ -9,9 +9,22 @@ state change leaves a public record a counterparty can audit without being
 given access to anything.
 
 ```bash
+npm create scaffold-hbar@latest -- --template <org>/conditional-settlement-kit
+cd conditional-settlement-kit
 yarn install
 yarn next:dev        # http://localhost:3000
 ```
+
+Replace `<org>` with the GitHub owner this repository is published under —
+`--template` takes an `owner/repo` reference, not a template name.
+
+**The `--` is required.** Without it `npm create` consumes `--template`
+itself, runs `create-scaffold-hbar <org> conditional-settlement-kit`, and
+scaffolds the default project instead. It fails silently, in the sense that
+you get a working project that is not this one.
+
+Already cloned it? `yarn install && yarn next:dev` is the whole setup, and
+needs no scaffolding step.
 
 No `.env`, no wallet, no keys. Three of the six routes work completely before
 you configure anything — including the one that reads live oracle data and the
@@ -59,7 +72,7 @@ The second one is the reason this template exists. It is not a crash, it is a
 wrong answer delivered confidently.
 
 **So the bound belongs to the feed, not to the system.**
-`ChainlinkPriceSource` stores `maxAge` per asset and has no global default at
+`ChainlinkPriceSource` stores `maxAge` per feed and has no global default at
 all — `registerFeed` reverts on `maxAge == 0`, because the most likely reason
 a caller omits it is that they have not thought about it.
 
@@ -317,6 +330,12 @@ proxies do not exist there, and registering them would revert on `decimals()`.
 yarn evidence:topic
 # → NEXT_PUBLIC_EVIDENCE_TOPIC=0.0.xxxxx
 ```
+
+The command prints both the mirror-node URL and a
+`https://hashscan.io/testnet/topic/0.0.xxxxx` link. Deployed contracts are
+browsable the same way, at `https://hashscan.io/testnet/contract/<address>` —
+`/blockexplorer` links to each of yours once they are deployed, because the
+scaffold's own explorer indexes a local chain and there is not one here.
 
 ---
 

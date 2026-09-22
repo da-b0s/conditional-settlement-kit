@@ -1,0 +1,72 @@
+schemaVersion: 2
+
+name: conditional-settlement-kit
+description: >
+  A scaffold-hbar template for price-triggered settlement. Escrow a payout,
+  attach it to a price condition, and let anyone settle it once the condition
+  holds. The oracle sits behind IPriceSource so it is swappable; the Chainlink
+  implementation stores a staleness bound PER FEED with no global default,
+  because all seven feeds on Hedera testnet declare the same 24-hour heartbeat
+  while their observed ages span more than a hundredfold. Every state change
+  is written to a public consensus topic a counterparty can audit with no
+  credentials at all.
+
+baseline:
+  commands:
+    # Required — used for install fingerprinting.
+    # Plain `yarn install`, no --no-immutable: the committed lockfile is in
+    # sync, so an immutable install (what CI does by default) passes.
+    - name: install
+      command: yarn install
+    - name: build
+      command: yarn next:build
+
+agent: claude
+
+prd:
+  - .harness/prds/01-core.md
+
+contract: .harness/acceptance-contract.json
+
+validator:
+  enabled: true
+
+validators:
+  static: .harness/validators/static.json
+  # Tier 1 — the command gate.
+  commands: .harness/validators/yarn.json
+  # Tier 2 — boots the app and walks every route the README names.
+  playwright: .harness/validators/playwright-smoke.yaml
+
+# ---------------------------------------------------------------------------
+# Tier 3.5 — chain validation against a funded ephemeral testnet account.
+#
+# Commented out rather than deleted, because it is the next tier to turn on
+# and the shape is easy to get wrong from memory.
+#
+# IT IS NOT REACHABLE WITH `hedera-harness validate`. validateWorkspace calls
+# runDeterministicValidation, which never touches chainValidation. Only
+# validateSemanticWorkspace — `hedera-harness validate-semantic` — provisions a
+# chain signer, and that path also RUNS THE AGENT, which is a billed
+# operation. Setting the two environment variables alone changes nothing, and
+# changes it silently: the run reports passed=true with the operator balance
+# untouched.
+#
+# The loader REJECTS network: mainnet. These variables are read from the
+# SHELL, never from .env — the harness does not load dotenv for them.
+#
+#   export HEDERA_OPERATOR_ID=0.0.xxxx     # ECDSA
+#   export HEDERA_OPERATOR_KEY=0x...
+#
+# Only one assertion in the contract is executableWithTestSigner (C11), so the
+# on-chain journey is proven once, end to end, rather than in pieces.
+# ---------------------------------------------------------------------------
+#
+# chainValidation:
+#   enabled: true
+#   network: testnet
+#   operator:
+#     accountIdEnv: HEDERA_OPERATOR_ID
+#     privateKeyEnv: HEDERA_OPERATOR_KEY
+#   fundingHbar: 10
+#   sweepBack: true

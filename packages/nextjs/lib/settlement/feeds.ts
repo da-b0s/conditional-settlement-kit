@@ -64,6 +64,12 @@
  *
  * feedReader.integration.test.ts re-takes this measurement live and asserts
  * the structure rather than the constants. Run `yarn test:live` to see it.
+ *
+ * It also asserts that every feed is inside ITS OWN recommended bound, which
+ * is how the BTC/USD figure below came to be widened from 2h to 6h: the feed
+ * drifted from 18 minutes to 2.0 hours over an afternoon and the suite went
+ * red. Shipping that bound would have been this file's own argument made in
+ * miniature — a bound that rejects a healthy feed.
  * ---------------------------------------------------------------------------
  *
  * Framework-free. See invariants.ts.
@@ -109,7 +115,9 @@ export const TESTNET_FEEDS: readonly PriceFeed[] = [
     decimals: 8,
     declaredHeartbeatSeconds: DECLARED_HEARTBEAT_SECONDS,
     observedAgeSeconds: 12 * 60,
-    recommendedMaxAgeSeconds: 1 * HOUR,
+    // Observed between 5 and 23 minutes across four readings. 2h is ~5x the
+    // worst of those.
+    recommendedMaxAgeSeconds: 2 * HOUR,
   },
   {
     pair: "BTC/USD",
@@ -117,7 +125,15 @@ export const TESTNET_FEEDS: readonly PriceFeed[] = [
     decimals: 8,
     declaredHeartbeatSeconds: DECLARED_HEARTBEAT_SECONDS,
     observedAgeSeconds: 18 * 60,
-    recommendedMaxAgeSeconds: 2 * HOUR,
+    // WIDENED FROM 2h AFTER WATCHING IT.
+    //
+    // 18 minutes in the first sample, then 1.6 hours, then 2.0 hours — at
+    // which point the live suite reported BTC/USD STALE against its own
+    // bound. A bound that rejects a feed behaving normally is exactly the
+    // failure this file argues against, and shipping one here would have
+    // been the tight-global-bound mistake in miniature. 6h is 3x the worst
+    // age observed, and still a quarter of the declared heartbeat.
+    recommendedMaxAgeSeconds: 6 * HOUR,
   },
   {
     pair: "ETH/USD",

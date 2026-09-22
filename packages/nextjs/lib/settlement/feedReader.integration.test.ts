@@ -88,6 +88,30 @@ describe("the seven feeds, live on Hedera testnet", () => {
     expect(report.wronglyRejectedByTightGlobalBound.length).toBeGreaterThan(0);
   });
 
+  it("THE CONSTANTS ARE HONEST: every feed is inside its OWN recommended bound", async () => {
+    /**
+     * This one is allowed to fail, and a failure means something specific:
+     * the bound recommended for that feed is too tight, not that the feed is
+     * broken. A bound that rejects a feed behaving normally is precisely the
+     * mistake this template exists to argue against, so shipping one would be
+     * that argument made in miniature.
+     *
+     * It has fired once already. BTC/USD read 18 minutes in the first sample,
+     * then 1.6 hours, then 2.0 hours against a 2-hour bound. The bound was
+     * widened to 6h, not the assertion relaxed.
+     */
+    const report = await readLiveFeeds();
+    const tooTight = report.feeds.filter(f => !f.withinBound);
+    expect(
+      tooTight,
+      tooTight.length
+        ? `bound too tight for: ${tooTight
+            .map(f => `${f.pair} (age ${formatAge(f.ageSeconds)} vs bound ${f.boundSeconds / 3600}h)`)
+            .join(", ")}. Widen recommendedMaxAgeSeconds in feeds.ts — do not relax this test.`
+        : "",
+    ).toHaveLength(0);
+  });
+
   it("every feed is inside its declared heartbeat, which is why the heartbeat is no help", async () => {
     // The point is not that a feed misbehaves. Every one is in spec, and the
     // spread happens anyway.

@@ -34,8 +34,8 @@ const DAY = 86_400;
 export const FEEDS: { pair: string; proxy: string; maxAge: number }[] = [
   // Fast movers. A reading older than an hour here is a hundred updates behind.
   { pair: "HBAR/USD", proxy: "0x59bC155EB6c6C415fE43255aF66EcF0523c92B4a", maxAge: 1 * HOUR },
-  { pair: "LINK/USD", proxy: "0xF111b70231E89D69eBC9f6C9208e9890383Ef432", maxAge: 1 * HOUR },
-  { pair: "BTC/USD", proxy: "0x058fE79CB5775d4b167920Ca6036B824805A9ABd", maxAge: 2 * HOUR },
+  { pair: "LINK/USD", proxy: "0xF111b70231E89D69eBC9f6C9208e9890383Ef432", maxAge: 2 * HOUR },
+  { pair: "BTC/USD", proxy: "0x058fE79CB5775d4b167920Ca6036B824805A9ABd", maxAge: 6 * HOUR },
   { pair: "ETH/USD", proxy: "0xb9d461e0b962aF219866aDfA7DD19C52bB9871b9", maxAge: 3 * HOUR },
   // Stablecoins update rarely by nature. Anything tighter than the declared
   // heartbeat rejects a perfectly healthy feed — measured at 16 to 23 hours.

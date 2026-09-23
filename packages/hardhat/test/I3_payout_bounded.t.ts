@@ -15,7 +15,17 @@
  */
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { HBAR_USD, State, at18, chainNow, createFundedPolicy, deploySystem, type Deployed } from "./helpers";
+import {
+  HBAR_USD,
+  HOUR,
+  State,
+  advance,
+  at18,
+  chainNow,
+  createFundedPolicy,
+  deploySystem,
+  type Deployed,
+} from "./helpers";
 
 describe("I3 — payout never exceeds escrow", () => {
   let d: Deployed;
@@ -141,5 +151,86 @@ describe("I3 — payout never exceeds escrow", () => {
     expect(await d.registry.stateOf(policyId)).to.equal(State.Settled);
     expect((await ethers.provider.getBalance(d.creator.address)) - creatorBefore).to.equal(ethers.parseEther("1"));
     expect(await d.registry.totalEscrowed()).to.equal(0n);
+  });
+
+  describe("a Draft policy holds nothing, and can still be cleaned up", () => {
+    /**
+     * The obvious worry about Draft is stranded escrow: fund a 10 HBAR policy
+     * with 3, sit in Draft forever, never get the 3 back. It cannot happen,
+     * and the reason is worth pinning rather than assuming.
+     *
+     * `fund()` reverts when a payment would leave a Draft policy short of
+     * maxPayout, and the revert rolls back the escrow increment with it. So
+     * partial funding is not a state this contract can reach.
+     *
+     * The stranded-escrow test got written first. It failed, because the
+     * underfunding reverted — which is the right outcome, and this is what
+     * the test became.
+     */
+    it("THE INVARIANT: underfunding reverts, so a Draft policy holds exactly zero", async () => {
+      const d = await deploySystem();
+      const expiry = (await chainNow()) + HOUR;
+      await d.registry
+        .connect(d.creator)
+        .createPolicy(d.beneficiary.address, HBAR_USD, at18("1"), true, at18("10"), expiry);
+      const policyId = (await d.registry.nextPolicyId()) - 1n;
+
+      await expect(d.registry.connect(d.creator).fund(policyId, { value: at18("3") })).to.be.revertedWithCustomError(
+        d.registry,
+        "PayoutExceedsEscrow",
+      );
+
+      // The escrow increment rolled back with the revert. Nothing is held.
+      expect((await d.registry.getPolicy(policyId)).escrow).to.equal(0n);
+      expect(await d.registry.totalEscrowed()).to.equal(0n);
+      expect(await d.registry.stateOf(policyId)).to.equal(State.Draft);
+    });
+
+    it("an abandoned Draft reaches a terminal state instead of sitting forever", async () => {
+      const d = await deploySystem();
+      const expiry = (await chainNow()) + HOUR;
+      await d.registry
+        .connect(d.creator)
+        .createPolicy(d.beneficiary.address, HBAR_USD, at18("1"), true, at18("10"), expiry);
+      const policyId = (await d.registry.nextPolicyId()) - 1n;
+
+      await advance(HOUR + 1);
+      await d.registry.connect(d.stranger).expire(policyId);
+      expect(await d.registry.stateOf(policyId)).to.equal(State.Expired);
+
+      await d.registry.connect(d.creator).refund(policyId);
+      expect(await d.registry.stateOf(policyId)).to.equal(State.Refunded);
+      expect(await d.registry.totalEscrowed()).to.equal(0n);
+    });
+
+    it("a Draft policy still cannot be expired before its deadline", async () => {
+      const d = await deploySystem();
+      const expiry = (await chainNow()) + HOUR;
+      await d.registry
+        .connect(d.creator)
+        .createPolicy(d.beneficiary.address, HBAR_USD, at18("1"), true, at18("10"), expiry);
+      const policyId = (await d.registry.nextPolicyId()) - 1n;
+
+      await expect(d.registry.connect(d.stranger).expire(policyId)).to.be.revertedWithCustomError(
+        d.registry,
+        "NotYetExpired",
+      );
+    });
+
+    it("expiring a Draft policy does not make it settleable", async () => {
+      // I5 must survive the new edge: Expired is Expired however it got there.
+      const d = await deploySystem();
+      const expiry = (await chainNow()) + HOUR;
+      await d.registry
+        .connect(d.creator)
+        .createPolicy(d.beneficiary.address, HBAR_USD, at18("0.01"), true, at18("10"), expiry);
+      const policyId = (await d.registry.nextPolicyId()) - 1n;
+
+      await advance(HOUR + 1);
+      await d.registry.connect(d.stranger).expire(policyId);
+
+      await expect(d.settlement.connect(d.stranger).trigger(policyId)).to.be.reverted;
+      expect(await d.registry.stateOf(policyId)).to.equal(State.Expired);
+    });
   });
 });

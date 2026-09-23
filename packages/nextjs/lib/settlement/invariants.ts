@@ -106,7 +106,10 @@ export function isTerminal(state: PolicyState): boolean {
  * not an omission — I4 and I5 are enforced by this table being exhaustive.
  */
 export const ALLOWED_TRANSITIONS: Readonly<Record<PolicyState, readonly PolicyState[]>> = {
-  draft: ["active"],
+  // Draft -> expired so the machine is total: a policy created and never
+  // funded can still reach a terminal state. No escrow is involved, because
+  // fund() reverts rather than leaving a Draft policy partially funded.
+  draft: ["active", "expired"],
   active: ["triggered", "expired"],
   triggered: ["settled"],
   // Terminal. Listed explicitly so a reader does not have to infer it.

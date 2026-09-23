@@ -134,6 +134,8 @@ contract PolicyRegistry {
         if (p.state != from) revert IllegalTransition(policyId, p.state, to);
 
         bool legal = (from == State.Draft && to == State.Active) ||
+            // So every policy can reach a terminal state. See expire().
+            (from == State.Draft && to == State.Expired) ||
             (from == State.Active && to == State.Triggered) ||
             (from == State.Active && to == State.Expired) ||
             (from == State.Triggered && to == State.Settled) ||
@@ -247,12 +249,29 @@ contract PolicyRegistry {
     /// @dev Permissionless on purpose: expiry is a fact about the clock, not a
     ///      privilege. HSS schedules a call to this, but anyone may push it so
     ///      a beneficiary is never stuck waiting on a scheduler.
+    /// @notice Expire a policy whose deadline has passed. Permissionless.
+    /// @dev Accepts BOTH Draft and Active, so every policy can reach a
+    ///      terminal state.
+    ///
+    ///      NO ESCROW IS AT RISK EITHER WAY, and it is worth being precise
+    ///      about why, because the obvious worry here is wrong. fund()
+    ///      reverts outright when a payment would leave a Draft policy still
+    ///      short of maxPayout, and the revert rolls back the escrow
+    ///      increment with it. A Draft policy therefore holds exactly zero,
+    ///      always; partial funding is not a state this contract can be in.
+    ///
+    ///      What this edge is for is abandoned drafts: a policy created and
+    ///      never funded would otherwise sit in Draft forever, with no
+    ///      caller able to move it and no terminal state to reach.
+    ///
+    ///      I5 is unaffected: a Draft policy has never been settleable, so
+    ///      expiring one cannot race a settlement.
     function expire(uint256 policyId) external {
         Policy storage p = _policies[policyId];
         if (p.state == State.None) revert UnknownPolicy(policyId);
         if (block.timestamp < p.expiry) revert NotYetExpired(policyId, p.expiry, block.timestamp);
 
-        _transition(policyId, State.Active, State.Expired);
+        _transition(policyId, p.state == State.Draft ? State.Draft : State.Active, State.Expired);
         emit PolicyExpired(policyId);
     }
 

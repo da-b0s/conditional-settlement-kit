@@ -38,9 +38,11 @@ import type { HederaNetwork } from "./hcs";
 export interface OperatorCredentials {
   /** `0.0.x`. */
   accountId: string;
-  /** DER-encoded private key. Never logged, never returned, never published. */
+  /** Raw 32-byte hex or DER. Never logged, never returned, never published. */
   privateKey: string;
   network?: HederaNetwork;
+  /** "ecdsa" (default) or "ed25519". Only consulted for a raw 32-byte key. */
+  keyType?: string;
 }
 
 export class PublishFailed extends Error {
@@ -78,7 +80,52 @@ export function operatorFromEnv(env: NodeJS.ProcessEnv = process.env): OperatorC
     throw new PublishFailed(`HEDERA_NETWORK is "${network}" — expected mainnet, testnet or previewnet`);
   }
 
-  return { accountId, privateKey, network };
+  return { accountId, privateKey, network, keyType: env.HEDERA_KEY_TYPE?.trim() };
+}
+
+/**
+ * Turn a configured key string into a PrivateKey.
+ *
+ * ---------------------------------------------------------------------------
+ * NOT WITH try/catch. THAT IS THE BUG THIS REPLACED.
+ *
+ * `PrivateKey.fromStringDer()` ACCEPTS a raw 64-character ECDSA hex string.
+ * It logs a warning suggesting fromStringECDSA and then returns a key anyway
+ * — a different key from the one that hex encodes. So a try-DER-then-fall-
+ * back-to-ECDSA chain never reaches its fallback: the first call succeeds,
+ * signs with the wrong key, and the network answers INVALID_SIGNATURE. Which
+ * then reads as a permissions problem rather than a parsing one, on an
+ * operation that had no permissions to get wrong.
+ *
+ * So the format is decided by SHAPE, before the SDK is asked.
+ *
+ * A raw 32-byte hex string is ambiguous between ECDSA and ED25519 — both are
+ * 64 hex characters. This resolves it to ECDSA, because ED25519 has no EVM
+ * alias and cannot deploy or call contracts on Hedera at all, so an ED25519
+ * raw key here is a configuration error rather than a case to support. Set
+ * HEDERA_KEY_TYPE=ed25519 to override, or pass a DER key, which carries its
+ * own algorithm identifier and needs no guessing.
+ * ---------------------------------------------------------------------------
+ */
+export function parseOperatorKey(
+  raw: string,
+  PrivateKey: typeof import("@hiero-ledger/sdk").PrivateKey,
+  keyType?: string,
+) {
+  const trimmed = raw.trim();
+  const body = trimmed.toLowerCase().startsWith("0x") ? trimmed.slice(2) : trimmed;
+
+  if (!/^[0-9a-fA-F]+$/.test(body)) {
+    throw new PublishFailed("operator key is not hex — expected a raw 32-byte key or a DER-encoded one");
+  }
+  if (body.length === 64) {
+    return (keyType ?? "").toLowerCase() === "ed25519"
+      ? PrivateKey.fromStringED25519(body)
+      : PrivateKey.fromStringECDSA(body);
+  }
+  if (body.length > 64) return PrivateKey.fromStringDer(body);
+
+  throw new PublishFailed(`operator key is ${body.length} hex characters; expected 64 for a raw key, or more for DER`);
 }
 
 /** Build a configured client. Callers must close it. */
@@ -93,19 +140,7 @@ async function clientFor(operator: OperatorCredentials) {
         ? Client.forPreviewnet()
         : Client.forTestnet();
 
-  let key;
-  try {
-    key = PrivateKey.fromStringDer(operator.privateKey);
-  } catch {
-    // ECDSA hex keys are the common case from a Hardhat-style .env, and the
-    // DER parser's own error names nothing useful.
-    try {
-      key = PrivateKey.fromStringECDSA(operator.privateKey);
-    } catch {
-      throw new PublishFailed("operator key is neither DER nor ECDSA hex — check HEDERA_OPERATOR_KEY");
-    }
-  }
-
+  const key = parseOperatorKey(operator.privateKey, PrivateKey, operator.keyType);
   client.setOperator(operator.accountId, key);
   return { client, key };
 }
@@ -207,7 +242,15 @@ function describe(error: unknown): string {
     return "that topic does not exist on this network — check HEDERA_NETWORK";
   }
   if (text.includes("INVALID_SIGNATURE") || text.includes("UNAUTHORIZED")) {
-    return "the operator key does not hold this topic's submit key";
+    // Two very different causes, and the wrong guess sends someone hunting
+    // for a permissions problem that does not exist. Creating a topic needs
+    // no permission at all, so a rejected signature there means the key does
+    // not belong to HEDERA_OPERATOR_ID — or was parsed as the wrong curve.
+    return (
+      "the network rejected the signature. Either the key does not belong to HEDERA_OPERATOR_ID, " +
+      "or it is an ED25519 key being read as ECDSA — set HEDERA_KEY_TYPE=ed25519. " +
+      "When submitting to an existing topic, it can also mean the key is not that topic's submit key."
+    );
   }
   if (text.includes("TOPIC_EXPIRED")) {
     return "the topic's auto-renew period lapsed and it was removed";

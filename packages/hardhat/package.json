@@ -23,6 +23,7 @@
     "verify:sourcify": "ts-node scripts/verifySourcify.ts",
     "evidence:topic": "ts-node scripts/createEvidenceTopic.ts",
     "evidence:publish": "hardhat run scripts/publishEvidence.ts",
+    "lifecycle": "hardhat run scripts/runLifecycle.ts",
     "test:ci": "hardhat test",
     "harness:tier35": "ts-node scripts/harnessTier35.ts"
   },

@@ -56,7 +56,7 @@
  */
 import type { HederaNetwork } from "./hcs";
 import { mirrorBase } from "./hcs";
-import type { OperatorCredentials } from "./hcsPublisher";
+import { type OperatorCredentials, parseOperatorKey } from "./hcsPublisher";
 
 /**
  * The longest a schedule may wait, per HIP-423.
@@ -221,18 +221,12 @@ async function scheduleClient(operator: OperatorCredentials) {
         ? Client.forPreviewnet()
         : Client.forTestnet();
 
-  let key;
-  try {
-    key = PrivateKey.fromStringDer(operator.privateKey);
-  } catch {
-    try {
-      key = PrivateKey.fromStringECDSA(operator.privateKey);
-    } catch {
-      throw new ScheduleFailed("operator key is neither DER nor ECDSA hex — check HEDERA_OPERATOR_KEY");
-    }
-  }
+  // Shared with hcsPublisher rather than duplicated. The try/catch version
+  // that used to live here had the same latent bug: fromStringDer accepts a
+  // raw ECDSA hex string, returns the wrong key, and the fallback is never
+  // reached. See parseOperatorKey for the detail.
+  client.setOperator(operator.accountId, parseOperatorKey(operator.privateKey, PrivateKey, operator.keyType));
 
-  client.setOperator(operator.accountId, key);
   // setPayerAccountId wants an AccountId, not the string form. Passing the
   // string compiles under a loose signature and fails at runtime.
   return { client, accountId: AccountId.fromString(operator.accountId) };

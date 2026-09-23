@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { HbarInput, HederaAddressInput } from "@scaffold-hbar-ui/components";
 import type { Address } from "viem";
-import { keccak256, parseEther, parseUnits, toHex } from "viem";
+import { keccak256, parseUnits, toHex } from "viem";
 import { useAccount } from "wagmi";
 import { useScaffoldWriteContract } from "~~/hooks/scaffold-hbar";
+import { useTargetNetwork } from "~~/hooks/scaffold-hbar/useTargetNetwork";
 import { TESTNET_FEEDS } from "~~/lib/settlement/feeds";
+import { hbarToContractAmount } from "~~/lib/settlement/units";
 
 /** The asset key the contracts use: keccak256 of the pair name. */
 const assetKey = (pair: string) => keccak256(toHex(pair));
@@ -22,6 +24,7 @@ const defaultExpiry = () => {
 
 export const PolicyForm = ({ onCreated }: { onCreated: () => void }) => {
   const { address } = useAccount();
+  const { targetNetwork } = useTargetNetwork();
   // HederaAddressInput keeps whatever was typed — `0.0.n` or `0x…` — in
   // `value`, and reports the RESOLVED EVM address separately. The contract
   // needs the resolved one; passing the raw text would send a Hedera id where
@@ -70,7 +73,12 @@ export const PolicyForm = ({ onCreated }: { onCreated: () => void }) => {
           // weibar and just as invisible.
           parseUnits(threshold, 18),
           triggerAbove,
-          parseEther(maxPayout),
+          // NOT parseEther. maxPayout is compared against msg.value inside
+          // the contract, and msg.value on Hedera is TINYBAR (8dp) while a
+          // transaction's value field is weibar (18dp). parseEther here
+          // overstates the promise by 10^10 and the policy can never
+          // activate. See lib/settlement/units.ts.
+          hbarToContractAmount(maxPayout, targetNetwork.id),
           BigInt(expirySeconds),
         ],
       });

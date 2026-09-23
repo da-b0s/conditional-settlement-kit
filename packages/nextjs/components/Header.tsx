@@ -11,6 +11,7 @@ import {
   ScaleIcon,
   SignalIcon,
 } from "@heroicons/react/24/outline";
+import { LocalFaucet } from "~~/components/LocalFaucet";
 import { RainbowKitCustomConnectButton } from "~~/components/scaffold-hbar";
 import { useOutsideClick } from "~~/hooks/scaffold-hbar";
 
@@ -128,7 +129,8 @@ export const Header = () => {
           <HeaderMenuLinks />
         </ul>
       </div>
-      <div className="navbar-end grow mr-4">
+      <div className="navbar-end grow mr-4 gap-2">
+        <LocalFaucet />
         <RainbowKitCustomConnectButton />
       </div>
     </div>

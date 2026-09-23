@@ -38,7 +38,7 @@
  * row publishes nothing the second time.
  */
 import * as dotenv from "dotenv";
-import { ethers } from "hardhat";
+import { deployments, ethers } from "hardhat";
 import { buildEvidence, type EvidenceKind } from "../../nextjs/lib/settlement/evidence";
 import { readEvidence, type HederaNetwork } from "../../nextjs/lib/settlement/hcs";
 import { operatorFromEnv, publishEvidence } from "../../nextjs/lib/settlement/hcsPublisher";
@@ -79,6 +79,35 @@ async function main() {
   const address = await registry.getAddress();
   console.log(`Reading PolicyRegistry at ${address}`);
 
+  // ---------------------------------------------------------------------
+  // HEDERA CAPS eth_getLogs AT A SEVEN-DAY WINDOW.
+  //
+  // `queryFilter(filter)` with no range asks for block 0 to latest, and the
+  // relay refuses:
+  //
+  //   The provided fromBlock and toBlock contain timestamps that exceed the
+  //   maximum allowed duration of 7 days
+  //
+  // So start at the block the registry was deployed in — there cannot be
+  // events before it — and walk forward in windows. Blocks are about two
+  // seconds apart, so seven days is roughly 302,000 of them; 250,000 leaves
+  // room for the arithmetic being approximate.
+  // ---------------------------------------------------------------------
+  const deployment = await deployments.get("PolicyRegistry");
+  const deployedAt = deployment.receipt?.blockNumber ?? 0;
+  const latest = await ethers.provider.getBlockNumber();
+  const WINDOW = 250_000;
+
+  const queryChunked = async (filter: Parameters<typeof registry.queryFilter>[0]) => {
+    const found = [];
+    for (let from = deployedAt; from <= latest; from += WINDOW) {
+      const to = Math.min(from + WINDOW - 1, latest);
+      found.push(...(await registry.queryFilter(filter, from, to)));
+    }
+    return found;
+  };
+  console.log(`  scanning blocks ${deployedAt} to ${latest}`);
+
   // What is already on the topic. Publishing is permanent, so this runs first.
   const existing = await readEvidence(topicId, { network }).catch(error => {
     // A topic with no messages yet is the normal first run.
@@ -93,7 +122,7 @@ async function main() {
   const pending: { kind: EvidenceKind; policyId: number; at: number; assetHash: string; price?: bigint }[] = [];
 
   for (const { event, kind } of EVENTS) {
-    const logs = await registry.queryFilter(registry.filters[event]());
+    const logs = await queryChunked(registry.filters[event]());
     for (const log of logs) {
       const parsed = "args" in log ? log.args : undefined;
       if (!parsed) continue;

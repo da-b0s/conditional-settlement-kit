@@ -70,8 +70,34 @@ const deploySettlement: DeployFunction = async (hre: HardhatRuntimeEnvironment) 
   const onHedera = chainId === 295 || chainId === 296 || chainId === 297;
 
   if (!onHedera) {
-    log(`Chain ${chainId} is not Hedera — skipping feed registration.`);
-    log("The Chainlink proxies exist only on Hedera; registering here would revert on decimals().");
+    // -------------------------------------------------------------------
+    // A LOCAL CHAIN GETS A MOCK FEED, SO THE WHOLE LIFECYCLE IS EXERCISABLE
+    // WITH NO TESTNET HBAR AND NO ACCOUNT.
+    //
+    // The real proxies exist only on Hedera and registering one here would
+    // revert on decimals(). Without a substitute, `trigger()` on a local
+    // chain fails with NoPriceSource and a reviewer cannot get past funding
+    // a policy — which makes the most interesting part of the template
+    // unreachable for anyone who has not yet obtained testnet HBAR.
+    //
+    // So: deploy MockAggregatorV3, register it as HBAR/USD, and say loudly
+    // that it is a mock. It is priced near the real feed and marked fresh,
+    // so a policy created with a sensible threshold settles immediately.
+    // -------------------------------------------------------------------
+    log(`Chain ${chainId} is not Hedera — the Chainlink proxies do not exist here.`);
+
+    const mock = await deploy("MockAggregatorV3", {
+      from: deployer,
+      // 8 decimals like every real feed, ~$0.09 like HBAR/USD, fresh now.
+      args: [8, 9_000_000, Math.floor(Date.now() / 1000)],
+      log: true,
+      autoMine: true,
+    });
+
+    const asset = assetKey("HBAR/USD");
+    await (await sourceC.registerFeed(asset, mock.address, 1 * HOUR)).wait();
+    log(`  registered HBAR/USD -> MOCK at ${mock.address} (maxAge 1h)`);
+    log("  THIS IS A MOCK FEED. It exists so the lifecycle can be demonstrated offline.");
   } else {
     for (const feed of FEEDS) {
       const asset = assetKey(feed.pair);
@@ -93,13 +119,16 @@ const deploySettlement: DeployFunction = async (hre: HardhatRuntimeEnvironment) 
     log(`  registry.settlement -> ${settlement.address}`);
   }
 
-  if (onHedera) {
-    for (const feed of FEEDS) {
-      const asset = assetKey(feed.pair);
-      if (!(await sourceC.supportsAsset(asset))) continue;
-      await (await settlementC.setPriceSource(asset, source.address)).wait();
-      log(`  priceSource[${feed.pair}] -> ${source.address}`);
-    }
+  // Point every asset the source actually knows about at it. On Hedera that
+  // is the seven registered feeds; on a local chain it is the single mock.
+  // Gating this on `onHedera` would leave the local mock registered with the
+  // source but unreachable from Settlement — funded policies, no settlement.
+  for (const feed of FEEDS) {
+    const asset = assetKey(feed.pair);
+    if (!(await sourceC.supportsAsset(asset))) continue;
+    if ((await settlementC.priceSourceOf(asset)).toLowerCase() === source.address.toLowerCase()) continue;
+    await (await settlementC.setPriceSource(asset, source.address)).wait();
+    log(`  priceSource[${feed.pair}] -> ${source.address}`);
   }
 
   // Verify the wiring rather than trust it. A system that deploys cleanly and

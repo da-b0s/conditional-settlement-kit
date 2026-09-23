@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { Address, HbarInput } from "@scaffold-hbar-ui/components";
-import { formatEther, formatUnits, keccak256, parseEther, toHex } from "viem";
+import { formatUnits, keccak256, toHex } from "viem";
 import { useAccount } from "wagmi";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-hbar";
+import { useTargetNetwork } from "~~/hooks/scaffold-hbar/useTargetNetwork";
 import { TESTNET_FEEDS } from "~~/lib/settlement/feeds";
+import { contractAmountToHbar, hbarToTxValue } from "~~/lib/settlement/units";
 
 /** Mirrors PolicyRegistry.State. Index is the on-chain enum value. */
 const STATES = ["None", "Draft", "Active", "Triggered", "Settled", "Expired", "Refunded"] as const;
@@ -24,6 +26,7 @@ const PAIR_BY_HASH = new Map(TESTNET_FEEDS.map(f => [keccak256(toHex(f.pair)).to
 
 export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
   const { address } = useAccount();
+  const { targetNetwork } = useTargetNetwork();
   const [fundAmount, setFundAmount] = useState("");
 
   const { data: policy, refetch } = useScaffoldReadContract({
@@ -80,7 +83,7 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
       </header>
 
       <p className="mt-3">
-        Pays <span className="font-semibold">{formatEther(maxPayout)} HBAR</span> when{" "}
+        Pays <span className="font-semibold">{contractAmountToHbar(maxPayout, targetNetwork.id)} HBAR</span> when{" "}
         <span className="font-semibold">{pair ?? "an asset"}</span> is{" "}
         {policy.triggerAbove ? "at or above" : "at or below"}{" "}
         <span className="font-semibold">{formatUnits(policy.threshold, 18)}</span>.
@@ -92,7 +95,7 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
           <Address address={policy.beneficiary} size="xs" />
         </dd>
         <dt className="text-base-content/60">escrow held</dt>
-        <dd className="font-mono">{formatEther(escrow)} HBAR</dd>
+        <dd className="font-mono">{contractAmountToHbar(escrow, targetNetwork.id)} HBAR</dd>
         {!pair && (
           <>
             <dt className="text-base-content/60">asset hash</dt>
@@ -128,10 +131,11 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
                   writeRegistry({
                     functionName: "fund",
                     args: [policyId],
-                    // parseEther, not Number(x) * 1e18: the float route loses
-                    // precision above ~9 HBAR and silently under- or
-                    // over-funds an escrow by a few tinybar.
-                    value: parseEther(fundAmount),
+                    // A transaction's value field is ALWAYS 18dp, even on
+                    // Hedera where the contract will read it as 8dp. This is
+                    // the other half of the pair — the amount above is
+                    // converted with contractAmountToHbar. See units.ts.
+                    value: hbarToTxValue(fundAmount),
                   }),
                 )
               }
@@ -178,8 +182,8 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
 
       {state === "Draft" && escrow < maxPayout && (
         <p className="mt-3 text-sm text-warning">
-          Needs {formatEther(maxPayout - escrow)} HBAR more before it can activate. The contract will not let a policy
-          promise more than it holds.
+          Needs {contractAmountToHbar(maxPayout - escrow, targetNetwork.id)} HBAR more before it can activate. The
+          contract will not let a policy promise more than it holds.
         </p>
       )}
 

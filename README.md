@@ -372,13 +372,53 @@ contract call to `value` and you send a Hedera id where an address belongs.
 is a `number`, and past 2^53 weibar — about 0.009 HBAR — it silently loses
 precision. Pin them to `bigint`.
 
-**Ten billion, twice.** Transaction `value` is weibar (18dp) and the network
-divides by 10^10 for tinybar, so use `parseEther` and never
-`Number(x) * 1e18`. And thresholds compare against the price normalised to
-18dp, not the feed's native 8dp.
+**Ten billion, three times.** The worst one first: a transaction's `value`
+field is weibar (18dp), but by the time a contract reads `msg.value` it is
+**tinybar (8dp)**. So a contract that takes an amount as an argument and
+compares it against `msg.value` is comparing two different units. This cost a
+reverted testnet transaction — `PayoutExceedsEscrow(1, 1000000000000000000,
+100000000)`, where both calls said "one HBAR" — and it **does not reproduce
+locally**, because a Hardhat node is an ordinary EVM where the two agree.
+Every contract test passed. Use [`lib/settlement/units.ts`](packages/nextjs/lib/settlement/units.ts).
+Then: use `parseEther` and never `Number(x) * 1e18` for the tx value. And
+thresholds compare against the price normalised to 18dp, not the feed's
+native 8dp.
+
+**`PrivateKey.fromStringDer()` accepts a raw ECDSA hex key** and returns a
+different key rather than throwing, so a try-DER-then-ECDSA fallback never
+falls back. You get `INVALID_SIGNATURE` on an operation that needed no
+permission. Decide the format by shape.
+
+**Gas on Hedera is not the EVM estimate.** `trigger()` costs 111,226 gas on a
+Hardhat node and ran out at a 500,000 limit on Hedera, because it reaches
+through two contracts into an external oracle. Budget multiples.
+
+**`eth_getLogs` is capped at seven days.** `queryFilter` with no range asks
+for block 0 to latest and is refused. Start from the deployment block and
+walk forward in windows.
 
 **`answer` is a signed int256.** Read as unsigned, a negative price becomes a
 number near 2^256 and sails through a naive bounds check.
+
+---
+
+## Deployed, and checkable
+
+Everything in [`EVIDENCE.md`](EVIDENCE.md) happened on Hedera testnet and can
+be verified without running this repository:
+
+| | |
+| --- | --- |
+| `PolicyRegistry` | [`0xa940AdB6D97BaD78cddF5c451b8Ce05EE6EdECEF`](https://hashscan.io/testnet/contract/0xa940AdB6D97BaD78cddF5c451b8Ce05EE6EdECEF) |
+| `Settlement` | [`0x7710BbaDcC568f52306a13ec2976517EcdE4abcc`](https://hashscan.io/testnet/contract/0x7710BbaDcC568f52306a13ec2976517EcdE4abcc) |
+| `ChainlinkPriceSource` | [`0x05956Cca58B1CAEE6Bd798FFD85c0103B363387e`](https://hashscan.io/testnet/contract/0x05956Cca58B1CAEE6Bd798FFD85c0103B363387e) |
+| Evidence topic | [`0.0.10651272`](https://hashscan.io/testnet/topic/0.0.10651272) |
+
+Policy #4 was created, funded with 1 HBAR, and **settled by an account that
+was neither the creator nor the beneficiary** —
+[the trigger transaction](https://hashscan.io/testnet/transaction/0xded6b84925026ccdd545a85446ee2f1ad7860e190ddc1f8420257d28b357ce6e).
+A second trigger reverted. Reproduce the whole thing with
+`yarn lifecycle --network hederaTestnet`.
 
 ---
 

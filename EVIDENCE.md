@@ -13,11 +13,24 @@ Reproduce it yourself with `yarn lifecycle --network hederaTestnet`.
 
 | Contract | Address | |
 | --- | --- | --- |
-| `PolicyRegistry` | `0xa940AdB6D97BaD78cddF5c451b8Ce05EE6EdECEF` | [HashScan](https://hashscan.io/testnet/contract/0xa940AdB6D97BaD78cddF5c451b8Ce05EE6EdECEF) |
-| `Settlement` | `0x7710BbaDcC568f52306a13ec2976517EcdE4abcc` | [HashScan](https://hashscan.io/testnet/contract/0x7710BbaDcC568f52306a13ec2976517EcdE4abcc) |
-| `ChainlinkPriceSource` | `0x05956Cca58B1CAEE6Bd798FFD85c0103B363387e` | [HashScan](https://hashscan.io/testnet/contract/0x05956Cca58B1CAEE6Bd798FFD85c0103B363387e) |
+| `PolicyRegistry` | `0x0d107277BAA8D031D5CeD8CA6E1b4C0c552A993a` | [HashScan](https://hashscan.io/testnet/contract/0x0d107277BAA8D031D5CeD8CA6E1b4C0c552A993a) |
+| `Settlement` | `0x57eDdaAe98A54D3346e556BB8D681cf91E6E1554` | [HashScan](https://hashscan.io/testnet/contract/0x57eDdaAe98A54D3346e556BB8D681cf91E6E1554) |
+| `ChainlinkPriceSource` | `0x348C2590D0Ea01daEbD4d907B83F5752FfC577DF` | [HashScan](https://hashscan.io/testnet/contract/0x348C2590D0Ea01daEbD4d907B83F5752FfC577DF) |
 
 Deployer / operator: [`0.0.10349640`](https://hashscan.io/testnet/account/0.0.10349640)
+
+**All three are verified on Sourcify with `exact_match`**, so the deployed
+bytecode provably compiles from the source in this repository — you do not
+have to take the addresses on trust:
+
+- [ChainlinkPriceSource](https://repo.sourcify.dev/contracts/full_match/296/0x348C2590D0Ea01daEbD4d907B83F5752FfC577DF/)
+- [PolicyRegistry](https://repo.sourcify.dev/contracts/full_match/296/0x0d107277BAA8D031D5CeD8CA6E1b4C0c552A993a/)
+- [Settlement](https://repo.sourcify.dev/contracts/full_match/296/0x57eDdaAe98A54D3346e556BB8D681cf91E6E1554/)
+
+Reproduce with `yarn hardhat:verify:sourcify <address> contracts/X.sol:X`.
+Note that `yarn hardhat:verify:testnet` does NOT work: the bundled
+hardhat-verify 2.x calls Sourcify's retired V1 API and fails with a JSON
+parse error that reads like an explorer outage.
 
 ### Feeds registered, each with its own bound
 
@@ -39,7 +52,7 @@ Check any of them yourself:
 ```bash
 curl -s -X POST https://testnet.hashio.io/api \
   -H 'content-type: application/json' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"to":"0x05956Cca58B1CAEE6Bd798FFD85c0103B363387e","data":"0x..."},"latest"]}'
+  -d '{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"to":"0x348C2590D0Ea01daEbD4d907B83F5752FfC577DF","data":"0x..."},"latest"]}'
 ```
 
 Or just open [`/feeds`](#), which does it on page load with no credentials.
@@ -48,21 +61,21 @@ Or just open [`/feeds`](#), which does it on page load with no credentials.
 
 ## A complete settlement, pushed by a stranger
 
-Policy **#4**, against the real HBAR/USD Chainlink feed.
+Policy **#1**, against the real HBAR/USD Chainlink feed.
 
 | Step | Transaction |
 | --- | --- |
-| Fund the settler | [`0xa7bc3927420dec8a…`](https://hashscan.io/testnet/transaction/0xa7bc3927420dec8a74c4933e736310f73354ee4da78d85b25f2e9184a8bb1558) |
-| `createPolicy` | [`0x47b13a6c6d71e22e…`](https://hashscan.io/testnet/transaction/0x47b13a6c6d71e22e87f810ee4d2e1ac2508a10dac427148fbbd4244bafa0f3f3) |
-| `fund` the escrow | [`0xd433644282e1a2a0…`](https://hashscan.io/testnet/transaction/0xd433644282e1a2a0e81fba3516c500625517d3848abc087d4e147db706194366) |
-| **`trigger()` — by the stranger** | [`0xded6b84925026ccd…`](https://hashscan.io/testnet/transaction/0xded6b84925026ccdd545a85446ee2f1ad7860e190ddc1f8420257d28b357ce6e) |
+| Fund the settler | [`0x9a0059a1f219e1f5…`](https://hashscan.io/testnet/transaction/0x9a0059a1f219e1f5b35c63f7de6924d0f68bafb869dfcc2bc992bf5191f12514) |
+| `createPolicy` | [`0x6695c6a1981ab9c9…`](https://hashscan.io/testnet/transaction/0x6695c6a1981ab9c9f88776eb4c6b1c87add42a5e0dac65f5ef437922cae0190e) |
+| `fund` the escrow | [`0xc3f7901b3b44b6bd…`](https://hashscan.io/testnet/transaction/0xc3f7901b3b44b6bd2115389fc554de72ecc80b7a2f017082fe3b6cdbf671e68a) |
+| **`trigger()` — by the stranger** | [`0x2e00806f0ea3b3ed…`](https://hashscan.io/testnet/transaction/0x2e00806f0ea3b3ed72f45df64bae1e51b44f5de80c6105f18906fca71adcc968) |
 
 | | |
 | --- | --- |
-| Beneficiary | [`0xb13171D8f4d6d94c83CF57cB3f2A44497C870460`](https://hashscan.io/testnet/account/0xb13171D8f4d6d94c83CF57cB3f2A44497C870460) |
-| Settler | [`0x472E0314ff404cbd55bBC909D866A479228b4C61`](https://hashscan.io/testnet/account/0x472E0314ff404cbd55bBC909D866A479228b4C61) |
-| Price it settled on | `0.09231262` (18dp: `92312620000000000`) |
-| Feed reading age | 18 minutes, against a 3,600s bound |
+| Beneficiary | [`0xAF44ed77Af8B92564Ca0065677b66e8BbBE5612c`](https://hashscan.io/testnet/account/0xAF44ed77Af8B92564Ca0065677b66e8BbBE5612c) |
+| Settler | [`0x506138B351eF51dAe9FD84CE54c4fCD0f58Ac3fD`](https://hashscan.io/testnet/account/0x506138B351eF51dAe9FD84CE54c4fCD0f58Ac3fD) |
+| Price it settled on | `0.09134` (18dp: `91340000000000000`) |
+| Feed bound applied | 3,600s — HBAR/USD carries the tightest one |
 | Paid to beneficiary | **1.0 HBAR** |
 
 **The settler is neither the creator nor the beneficiary.** That is the part
@@ -73,7 +86,7 @@ have a promise.
 
 ### I1, on the live chain
 
-A second `trigger()` on policy #4 **reverted**. The registry found the policy
+A second `trigger()` on policy #1 **reverted**. The registry found the policy
 in `Settled` and refused the `Active → Triggered` transition. There is no
 "already paid" flag to forget to check — the state machine is the check.
 
@@ -81,25 +94,29 @@ in `Settled` and refused the `Active → Triggered` transition. There is no
 
 ## The public evidence trail
 
-Topic [`0.0.10651272`](https://hashscan.io/testnet/topic/0.0.10651272), created
+Topic [`0.0.10651678`](https://hashscan.io/testnet/topic/0.0.10651678), created
 with a submit key so only the operator can append.
 
 Read the whole thing with no credentials:
 
 ```bash
-curl -s "https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10651272/messages?limit=100&order=asc"
+curl -s "https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10651678/messages?limit=100&order=asc"
 ```
 
-The six records, exactly as they sit on the ledger:
+The three records, exactly as they sit on the ledger:
 
 ```json
-{"v":1,"kind":"policy_created","policyId":1,"at":1790010090,"assetHash":"0x2c03d7a8…cfa908"}
-{"v":1,"kind":"policy_created","policyId":2,"at":1790010278,"assetHash":"0x2c03d7a8…cfa908"}
-{"v":1,"kind":"policy_created","policyId":3,"at":1790010421,"assetHash":"0x2c03d7a8…cfa908"}
-{"v":1,"kind":"policy_created","policyId":4,"at":1790010523,"assetHash":"0x2c03d7a8…cfa908"}
-{"v":1,"kind":"triggered","policyId":4,"at":1790010541,"assetHash":"0x2c03d7a8…cfa908","price":"92312620000000000"}
-{"v":1,"kind":"settled","policyId":4,"at":1790010541,"assetHash":"0x2c03d7a8…cfa908","price":"92312620000000000"}
+{"v":1,"kind":"policy_created","policyId":1,"at":1790012394,"assetHash":"0x2c03d7a8…cfa908"}
+{"v":1,"kind":"triggered","policyId":1,"at":1790012422,"assetHash":"0x2c03d7a8…cfa908","price":"91340000000000000"}
+{"v":1,"kind":"settled","policyId":1,"at":1790012422,"assetHash":"0x2c03d7a8…cfa908","price":"91340000000000000"}
 ```
+
+One topic belongs to one deployment. The idempotence key is
+`(kind, policyId)` and carries no contract address, so pointing a second
+registry at the same topic would make its policy #1 look already-published.
+The address is deliberately not in the record — `evidence.ts` refuses
+anything shaped like one, and weakening that guard to solve a bookkeeping
+problem would be the wrong trade.
 
 ### I6, verifiable by inspection
 
@@ -119,7 +136,7 @@ cannot be withdrawn, only apologised for underneath.
 nothing:
 
 ```
-  topic 0.0.10651272 already holds 6 evidence records
+  topic 0.0.10651678 already holds 3 evidence records
 
 Nothing to publish — the topic is up to date.
 ```

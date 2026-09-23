@@ -409,16 +409,17 @@ be verified without running this repository:
 
 | | |
 | --- | --- |
-| `PolicyRegistry` | [`0xa940AdB6D97BaD78cddF5c451b8Ce05EE6EdECEF`](https://hashscan.io/testnet/contract/0xa940AdB6D97BaD78cddF5c451b8Ce05EE6EdECEF) |
-| `Settlement` | [`0x7710BbaDcC568f52306a13ec2976517EcdE4abcc`](https://hashscan.io/testnet/contract/0x7710BbaDcC568f52306a13ec2976517EcdE4abcc) |
-| `ChainlinkPriceSource` | [`0x05956Cca58B1CAEE6Bd798FFD85c0103B363387e`](https://hashscan.io/testnet/contract/0x05956Cca58B1CAEE6Bd798FFD85c0103B363387e) |
-| Evidence topic | [`0.0.10651272`](https://hashscan.io/testnet/topic/0.0.10651272) |
+| `PolicyRegistry` | [`0x0d107277BAA8D031D5CeD8CA6E1b4C0c552A993a`](https://hashscan.io/testnet/contract/0x0d107277BAA8D031D5CeD8CA6E1b4C0c552A993a) |
+| `Settlement` | [`0x57eDdaAe98A54D3346e556BB8D681cf91E6E1554`](https://hashscan.io/testnet/contract/0x57eDdaAe98A54D3346e556BB8D681cf91E6E1554) |
+| `ChainlinkPriceSource` | [`0x348C2590D0Ea01daEbD4d907B83F5752FfC577DF`](https://hashscan.io/testnet/contract/0x348C2590D0Ea01daEbD4d907B83F5752FfC577DF) |
+| Evidence topic | [`0.0.10651678`](https://hashscan.io/testnet/topic/0.0.10651678) |
 
-Policy #4 was created, funded with 1 HBAR, and **settled by an account that
+Policy #1 was created, funded with 1 HBAR, and **settled by an account that
 was neither the creator nor the beneficiary** —
-[the trigger transaction](https://hashscan.io/testnet/transaction/0xded6b84925026ccdd545a85446ee2f1ad7860e190ddc1f8420257d28b357ce6e).
-A second trigger reverted. Reproduce the whole thing with
-`yarn lifecycle --network hederaTestnet`.
+[the trigger transaction](https://hashscan.io/testnet/transaction/0x2e00806f0ea3b3ed72f45df64bae1e51b44f5de80c6105f18906fca71adcc968).
+A second trigger reverted. All three contracts are verified on Sourcify with
+`exact_match`, so the deployed bytecode provably compiles from this source.
+Reproduce the whole thing with `yarn lifecycle --network hederaTestnet`.
 
 ---
 

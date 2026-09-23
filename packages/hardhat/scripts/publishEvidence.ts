@@ -36,6 +36,14 @@
  * twice cannot be undone. Before writing anything this reads the topic back
  * and skips every (kind, policyId) pair already there. Running it twice in a
  * row publishes nothing the second time.
+ *
+ * ONE TOPIC PER DEPLOYMENT. That key is (kind, policyId) and carries no
+ * contract address, so pointing a second registry at the same topic would
+ * make its policy #1 look already-published and skip it silently. The
+ * address is deliberately NOT in the record — evidence.ts refuses anything
+ * shaped like an address, and weakening that guard to solve a bookkeeping
+ * problem would be the wrong trade. Create a topic per deployment instead;
+ * yarn evidence:topic takes a few seconds.
  */
 import * as dotenv from "dotenv";
 import { deployments, ethers } from "hardhat";

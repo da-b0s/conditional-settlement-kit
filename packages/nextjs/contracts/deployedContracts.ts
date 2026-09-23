@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-hbar/contract";
 const deployedContracts = {
   296: {
     ChainlinkPriceSource: {
-      address: "0x05956Cca58B1CAEE6Bd798FFD85c0103B363387e",
+      address: "0x348C2590D0Ea01daEbD4d907B83F5752FfC577DF",
       abi: [
         {
           inputs: [],
@@ -387,10 +387,10 @@ const deployedContracts = {
         maxAgeOf: "contracts/IPriceSource.sol",
         supportsAsset: "contracts/IPriceSource.sol",
       },
-      deployedOnBlock: 40805566,
+      deployedOnBlock: 40806663,
     },
     PolicyRegistry: {
-      address: "0xa940AdB6D97BaD78cddF5c451b8Ce05EE6EdECEF",
+      address: "0x0d107277BAA8D031D5CeD8CA6E1b4C0c552A993a",
       abi: [
         {
           inputs: [],
@@ -1085,10 +1085,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 40805573,
+      deployedOnBlock: 40806669,
     },
     Settlement: {
-      address: "0x7710BbaDcC568f52306a13ec2976517EcdE4abcc",
+      address: "0x57eDdaAe98A54D3346e556BB8D681cf91E6E1554",
       abi: [
         {
           inputs: [
@@ -1359,7 +1359,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 40805579,
+      deployedOnBlock: 40806675,
     },
   },
   31337: {

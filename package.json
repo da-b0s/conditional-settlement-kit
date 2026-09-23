@@ -48,6 +48,7 @@
   "evidence:topic": "yarn workspace @sh/hardhat evidence:topic",
   "evidence:publish": "yarn workspace @sh/hardhat evidence:publish",
   "lifecycle": "yarn workspace @sh/hardhat lifecycle",
+  "failures": "yarn workspace @sh/hardhat failures",
   "next:test:live": "yarn workspace @sh/nextjs test:live"
   },
   "packageManager": "yarn@3.2.3",

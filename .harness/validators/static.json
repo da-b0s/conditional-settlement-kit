@@ -22,7 +22,7 @@
       "packages/hardhat/test/I3_payout_bounded.t.ts",
       "packages/hardhat/test/I4_authorisation.t.ts",
       "packages/hardhat/test/I5_expiry_race.t.ts",
-      "packages/nextjs/lib/settlement/evidence.test.ts"
+      "packages/nextjs/lib/settlement/I6_evidence_shape.test.ts"
     ],
     "forbidden": [
       ".env",

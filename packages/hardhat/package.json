@@ -24,6 +24,7 @@
     "evidence:topic": "ts-node scripts/createEvidenceTopic.ts",
     "evidence:publish": "hardhat run scripts/publishEvidence.ts",
     "lifecycle": "hardhat run scripts/runLifecycle.ts",
+    "failures": "hardhat run scripts/runFailureDemos.ts",
     "test:ci": "hardhat test",
     "harness:tier35": "ts-node scripts/harnessTier35.ts"
   },

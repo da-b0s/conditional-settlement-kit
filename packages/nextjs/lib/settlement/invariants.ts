@@ -74,7 +74,7 @@ export const INVARIANTS: readonly Invariant[] = [
     statement: "Public evidence contains no secrets or personal data — hashes and minimal summaries only.",
     provenBy:
       "Adversarial tests against the builder: every forbidden field, and every value shaped like an address, an account id or a key, is refused. Reading a real topic back exercises the same shape from the other side.",
-    testFile: "packages/nextjs/lib/settlement/evidence.test.ts",
+    testFile: "packages/nextjs/lib/settlement/I6_evidence_shape.test.ts",
   },
 ] as const;
 

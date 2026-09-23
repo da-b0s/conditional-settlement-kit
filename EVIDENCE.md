@@ -92,6 +92,54 @@ in `Settled` and refused the `Active → Triggered` transition. There is no
 
 ---
 
+## The four refusals, on chain
+
+A happy path shows that the code can pay out. It shows nothing about whether
+the code can be made to pay out when it should not, which is the only
+question that matters for something holding escrow. So each of these is a
+real transaction against the same deployed contracts, and each one **failed**.
+
+Reproduce with `yarn failures --network hederaTestnet`.
+
+| | Refusal | Transaction | Contract's own error |
+| --- | --- | --- | --- |
+| **F1** | `trigger()` against a feed whose own bound it cannot meet | [`0x32a66611d054bec3…`](https://hashscan.io/testnet/transaction/0x32a66611d054bec3cc18e41b614368951c25e318e61b0bcf161c8849d4fdfb13) | `ObservationStale(0xab2485a4…fe776, 1790014007, 1790015384, 1)` |
+| **F2** | `registry.settle()` called directly, bypassing `Settlement` | [`0x1bc78e3b77d1f61d…`](https://hashscan.io/testnet/transaction/0x1bc78e3b77d1f61dc6cffeee961a2717515fbf08b55090cbb5473c9c9f768997) | `NotSettlement()` |
+| **F3** | `trigger()` on a policy already expired | [`0xae59e5381cb3a977…`](https://hashscan.io/testnet/transaction/0xae59e5381cb3a977ac3009b6493fdbc967c886e6a262ab6e14019032c0450f25) | `AlreadyExpired(9, 1790015455, 1790015495)` |
+| **F4** | `fund()` with 0.1 HBAR against a 1 HBAR promise | [`0x266432771905fef9…`](https://hashscan.io/testnet/transaction/0x266432771905fef9c7afc8e61e63b6ae94620605ef76c3d7b798d1c1dd5e519f) | `PayoutExceedsEscrow(10, 100000000, 10000000)` |
+
+Together with the successful settlement and the refused replay above, that is
+**six outcomes, each with a testnet transaction behind it**.
+
+### F1 is the template's whole argument, on-chain
+
+A real Chainlink feed cannot be forced stale on demand, so F1 registers the
+**same proxy** — `0x59bC155EB6c6C415fE43255aF66EcF0523c92B4a`, the real
+HBAR/USD feed — under a second asset key with a **one-second** bound.
+
+Same contract. Same price. Same moment. One asset settles and the other
+reverts, because the bound belongs to the feed rather than to the system.
+The error carries the arithmetic: reading from `1790014007`, evaluated at
+`1790015384`, against a `maxAge` of `1` — 1,377 seconds too old.
+
+### F4 shows the units, too
+
+`PayoutExceedsEscrow(10, 100000000, 10000000)` is a 1 HBAR promise against
+0.1 HBAR of escrow, in **tinybar** — `1e8` and `1e7`. That is `msg.value`'s
+own precision, and seeing it here rather than as `1e18` is the units fix
+holding on a live network.
+
+### What did not decode, and why it is worth saying
+
+F2 first came back as a bare `CONTRACT_REVERT_EXECUTED` while the other three
+decoded cleanly. The cause was in the decoder, not the chain: a custom error
+with no arguments is exactly the 4-byte selector, so its revert data is 10
+characters, and the length guard said `> 10`. Every zero-argument error —
+`NotSettlement`, `NotOwner`, `NotCreator`, `ZeroAddress` — was being silently
+dropped, which is exactly the set whose names carry the entire meaning.
+
+---
+
 ## The public evidence trail
 
 Topic [`0.0.10651678`](https://hashscan.io/testnet/topic/0.0.10651678), created
@@ -103,7 +151,8 @@ Read the whole thing with no credentials:
 curl -s "https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10651678/messages?limit=100&order=asc"
 ```
 
-The three records, exactly as they sit on the ledger:
+The first three records — the successful lifecycle. The topic now holds 18,
+including the expiries and refunds the failure demos produced:
 
 ```json
 {"v":1,"kind":"policy_created","policyId":1,"at":1790012394,"assetHash":"0x2c03d7a8…cfa908"}
@@ -136,7 +185,7 @@ cannot be withdrawn, only apologised for underneath.
 nothing:
 
 ```
-  topic 0.0.10651678 already holds 3 evidence records
+  topic 0.0.10651678 already holds 18 evidence records
 
 Nothing to publish — the topic is up to date.
 ```

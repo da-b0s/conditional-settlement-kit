@@ -1,12 +1,31 @@
 # Conditional Settlement Kit
 
 A [scaffold-hbar](https://github.com/hashgraph/scaffold-hbar) template for
-price-triggered settlement on Hedera.
+**conditional settlement**: money held in escrow, released when a verified
+external condition is met, refunded when a deadline passes first, with an
+audit trail either way.
 
-Escrow a payout, attach it to a price condition, and let anyone settle it once
-the condition holds. The escrow is on-chain, the oracle is swappable, and every
-state change leaves a public record a counterparty can audit without being
-given access to anything.
+That shape is not one product. It is:
+
+- **Freelance milestone release** — pay when the milestone is verified
+- **Grant disbursement** against a measured KPI
+- **SLA credits** issued automatically when a threshold is breached
+- **Marketplace delivery confirmation**
+- **Warranty and guarantee claims**
+- **Escrow with a timeout**
+- **Price protection** — the demo instance, and the one this repo ships
+
+The escrow is on-chain, the condition source is swappable, and every state
+change leaves a public record a counterparty can audit without being given
+access to anything.
+
+> **This is not an oracle adapter.** Provider adapters are already solved by
+> the official `oracles` template, which normalises Chainlink, Supra and Pyth
+> behind one interface and reads prices. It stops at the read. **This template
+> is what happens after the price is read**: the policy state machine, the
+> settlement guarantees, the evidence trail, the expiry logic, and the failure
+> behaviour. One provider is implemented properly rather than three
+> superficially.
 
 ```bash
 npm create scaffold-hbar@latest -- --template <org>/conditional-settlement-kit
@@ -127,7 +146,7 @@ claim the project cannot back.
 | **I3** | Payout never exceeds funded escrow. | Configure a payout larger than escrow; reverts. | `I3_payout_bounded.t.ts` |
 | **I4** | Only authorised paths change final state. | Unauthorised caller attempts settle; reverts. | `I4_authorisation.t.ts` |
 | **I5** | Expiry and settlement cannot both succeed. Both are terminal and mutually exclusive. | Race expiry-then-settle and settle-then-expiry; exactly one wins each way. | `I5_expiry_race.t.ts` |
-| **I6** | Public evidence contains no secrets or personal data — hashes and minimal summaries only. | Adversarial tests against the builder, plus reading a real topic back. | `lib/settlement/evidence.test.ts` |
+| **I6** | Public evidence contains no secrets or personal data — hashes and minimal summaries only. | Adversarial tests against the builder, plus reading a real topic back. | `I6_evidence_shape.test.ts` |
 
 The rule when changing that file: an invariant may be clarified, but it may
 not be weakened to match an implementation that failed it. If the code cannot
@@ -413,6 +432,24 @@ be verified without running this repository:
 | `Settlement` | [`0x57eDdaAe98A54D3346e556BB8D681cf91E6E1554`](https://hashscan.io/testnet/contract/0x57eDdaAe98A54D3346e556BB8D681cf91E6E1554) |
 | `ChainlinkPriceSource` | [`0x348C2590D0Ea01daEbD4d907B83F5752FfC577DF`](https://hashscan.io/testnet/contract/0x348C2590D0Ea01daEbD4d907B83F5752FfC577DF) |
 | Evidence topic | [`0.0.10651678`](https://hashscan.io/testnet/topic/0.0.10651678) |
+
+### Six outcomes, six transactions
+
+The demo is the failures. A happy path shows the code can pay out; it shows
+nothing about whether it can be made to pay out when it should not.
+
+| | Outcome | Result |
+| --- | --- | --- |
+| 1 | a fresh observation settles | paid 1 HBAR |
+| 2 | a replay is refused | reverted |
+| 3 | a stale reading is refused | `ObservationStale` |
+| 4 | an unauthorised caller is refused | `NotSettlement()` |
+| 5 | settlement cannot touch an expired policy | `AlreadyExpired` |
+| 6 | a payout larger than the escrow is refused | `PayoutExceedsEscrow` |
+
+Every one has a testnet transaction behind it in
+[`EVIDENCE.md`](EVIDENCE.md). Reproduce with `yarn lifecycle` and
+`yarn failures`.
 
 Policy #1 was created, funded with 1 HBAR, and **settled by an account that
 was neither the creator nor the beneficiary** —

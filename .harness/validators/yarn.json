@@ -1,36 +1,36 @@
 {
   "name": "settlement-commands",
-  "description": "Tier 1 command gate. Keep the install step named \"install\" — the harness fingerprints it to skip reinstalling across attempts.",
+  "description": "Tier 1 command gate. Keep the install step named \"install\" — the harness fingerprints it to skip reinstalling across attempts. EVERY command invokes the VENDORED yarn explicitly. The harness hands these straight to a shell rather than resolving the package manager the way it does for baseline.commands, so a bare `yarn` dies with \"command not found\" on any machine without a global install — which is every machine relying on this repo's vendored Yarn 3, since `corepack enable` needs Administrator on Windows. The symptom is all five commands failing in ~50ms, which reads like a broken project rather than a missing binary.",
   "requiresNoSecrets": true,
   "forbiddenCommands": ["npm install", "npm run", "pnpm install", "pnpm run"],
   "commands": [
     {
       "name": "install",
-      "command": "yarn install",
+      "command": "node .yarn/releases/yarn-3.2.3.cjs install",
       "timeoutMs": 420000,
       "purpose": "Install workspace dependencies. Plain install, no --no-immutable: the committed lockfile is in sync, so this matches what CI does."
     },
     {
       "name": "lint",
-      "command": "yarn lint",
+      "command": "node .yarn/releases/yarn-3.2.3.cjs lint",
       "timeoutMs": 300000,
       "purpose": "ESLint across both workspaces. Must report zero errors."
     },
     {
       "name": "test",
-      "command": "yarn next:test",
+      "command": "node .yarn/releases/yarn-3.2.3.cjs next:test",
       "timeoutMs": 180000,
-      "purpose": "101 unit tests over the framework-free core: the evidence builder's refusals, the feed table, the HCS reader against fabricated mirror-node responses, the scheduling guards, and a check that every invariant points at a test file that exists. Hermetic and offline — the live-endpoint suite is deliberately separate so this never fails because testnet was slow."
+      "purpose": "132 unit tests over the framework-free core: the evidence builder's refusals, the feed table, the HCS reader against fabricated mirror-node responses, the scheduling guards, and a check that every invariant points at a test file that exists. Hermetic and offline — the live-endpoint suite is deliberately separate so this never fails because testnet was slow."
     },
     {
       "name": "contract-test",
-      "command": "yarn hardhat:test:ci",
+      "command": "node .yarn/releases/yarn-3.2.3.cjs hardhat:test:ci",
       "timeoutMs": 300000,
-      "purpose": "61 contract tests, one file per invariant plus a parity check between the deploy script's feed table and the one the UI reads. Uses test:ci, which skips the gas reporter. Neither script enables HEDERA_FORKING: the scaffold ships networks.hardhat.forking unconditional, which sends every deploy and call to Hashio and takes the suite from 12 seconds to 10 minutes while fetching nothing it needs — the feed under test is a local mock, deployed so a bound can be exercised at an age no live feed would ever show."
+      "purpose": "65 contract tests, one file per invariant plus a parity check between the deploy script's feed table and the one the UI reads. Uses test:ci, which skips the gas reporter. Neither script enables HEDERA_FORKING: the scaffold ships networks.hardhat.forking unconditional, which sends every deploy and call to Hashio and takes the suite from 12 seconds to 10 minutes while fetching nothing it needs — the feed under test is a local mock, deployed so a bound can be exercised at an age no live feed would ever show."
     },
     {
       "name": "build",
-      "command": "yarn next:build",
+      "command": "node .yarn/releases/yarn-3.2.3.cjs next:build",
       "timeoutMs": 600000,
       "purpose": "Production build, which also type-checks. The type check is load-bearing here: it is what caught setPayerAccountId being handed a string where an AccountId belongs, on a path that costs HBAR to reach."
     }

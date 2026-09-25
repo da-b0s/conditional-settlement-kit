@@ -360,6 +360,11 @@ scaffold's own explorer indexes a local chain and there is not one here.
 
 ## Things that cost me time, so they need not cost you any
 
+The full list, with symptoms and diagnoses, is in
+[`NOTES-failures.md`](NOTES-failures.md). Nine of the eleven do not
+reproduce on a local chain, which is the theme. The ones most likely to bite
+you:
+
 **The scaffold forks Hedera for every test.** `networks.hardhat.forking` ships
 unconditional, so every deploy and call in the suite round-trips to Hashio.
 The invariant suite took **10 minutes** that way and takes **12 seconds**

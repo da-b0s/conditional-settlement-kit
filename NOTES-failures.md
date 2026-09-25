@@ -215,6 +215,53 @@ Knowing a trap is not the same as having checked for it.
 
 ---
 
+## 12. `routes=0` again, and this time it was the machine
+
+**Symptom.** With the commands fixed, the Tier 2 gate still reported:
+
+```
+playwrightGate=false routes=0
+- Playwright gate failed before route checks completed
+```
+
+**How to get the real error.** The CLI does not print it. The gate stores it
+in a `details` field that only the API exposes:
+
+```js
+import { runPlaywrightGate } from "hedera-harness/dist/validation/playwrightGate.js";
+const r = await runPlaywrightGate(process.cwd(), ".harness/validators/playwright-smoke.yaml");
+console.log(JSON.stringify(r, null, 1));
+```
+
+Which gave: `browserType.launch: spawn UNKNOWN`.
+
+**Cause.** Playwright's bundled Chromium was present under
+`%LOCALAPPDATA%/ms-playwright/chromium-1243/` but could not be executed —
+`Permission denied` on this machine. **Not a repository problem.**
+
+**Why the harness's own fallback did not save it.** `mcpBrowser.js` falls back
+to the system Chrome channel when Playwright's Chromium is missing, and it
+tests for that with `fs.access(executablePath)` — which checks EXISTENCE, not
+executability. A present-but-unrunnable binary passes that check, so the
+fallback never fires.
+
+**Workaround.** Move the blocked download aside so the fallback triggers:
+
+```bash
+mv "$LOCALAPPDATA/ms-playwright/chromium-1243" \
+   "$LOCALAPPDATA/ms-playwright/chromium-1243.blocked"
+```
+
+All eight routes then passed against system Chrome: status 200, rendered,
+no console errors, no forbidden text.
+
+**The lesson.** `routes=0` has at least four distinct causes — a bare `yarn`,
+the Windows detached console, a dev server too slow to announce itself, and
+an unrunnable browser — and all four report identically. Extract `details`
+first instead of guessing. Guessing is what cost the most time here.
+
+---
+
 ## 11. My own decoder dropped every zero-argument custom error
 
 **Symptom.** Three of four failure demos decoded to named contract errors.

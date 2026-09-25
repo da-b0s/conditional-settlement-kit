@@ -7,6 +7,7 @@
     "account:import": "hardhat run scripts/importAccount.ts",
     "account:reveal-pk": "hardhat run scripts/revealPK.ts",
     "chain": "HEDERA_FORKING=true hardhat node --network hardhat --no-deploy",
+    "chain:local": "hardhat node --network hardhat --no-deploy",
     "check-types": "tsc --noEmit --incremental",
     "compile": "hardhat compile",
     "clean": "hardhat clean",

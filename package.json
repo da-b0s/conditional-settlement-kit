@@ -15,6 +15,7 @@
     "hardhat:account:import": "yarn workspace @sh/hardhat account:import",
     "hardhat:account:reveal-pk": "yarn workspace @sh/hardhat account:reveal-pk",
     "hardhat:chain": "yarn workspace @sh/hardhat chain",
+    "hardhat:chain:local": "yarn workspace @sh/hardhat chain:local",
     "hardhat:check-types": "yarn workspace @sh/hardhat check-types",
     "hardhat:clean": "yarn workspace @sh/hardhat clean",
     "hardhat:compile": "yarn workspace @sh/hardhat compile",

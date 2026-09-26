@@ -28,6 +28,7 @@
  * Framework-free. See invariants.ts.
  */
 import { type PriceFeed, TESTNET_FEEDS } from "./feeds";
+import { withReadDeadline } from "./readDeadline";
 
 /** `latestRoundData()` */
 const LATEST_ROUND_DATA = "0xfeaf968c";
@@ -95,20 +96,24 @@ function wordAt(data: string, index: number): string {
 }
 
 async function ethCall(rpcUrl: string, to: string, data: string, doFetch: typeof fetch, id: number): Promise<string> {
-  const response = await doFetch(rpcUrl, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id, method: "eth_call", params: [{ to, data }, "latest"] }),
-  });
+  return withReadDeadline(async signal => {
+    const response = await doFetch(rpcUrl, {
+      cache: "no-store",
+      signal,
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id, method: "eth_call", params: [{ to, data }, "latest"] }),
+    });
 
-  if (!response.ok) throw new Error(`RPC returned ${response.status}`);
-  const payload = (await response.json()) as { result?: string; error?: { message?: string } };
-  if (payload.error) throw new Error(payload.error.message ?? "RPC error");
-  if (!payload.result || payload.result === "0x") {
-    // An empty return from a live endpoint means no contract at that address.
-    throw new Error("empty response — no contract at this address on this network");
-  }
-  return payload.result;
+    if (!response.ok) throw new Error(`RPC returned ${response.status}`);
+    const payload = (await response.json()) as { result?: string; error?: { message?: string } };
+    if (payload.error) throw new Error(payload.error.message ?? "RPC error");
+    if (!payload.result || payload.result === "0x") {
+      // An empty return from a live endpoint means no contract at that address.
+      throw new Error("empty response — no contract at this address on this network");
+    }
+    return payload.result;
+  });
 }
 
 /**

@@ -22,7 +22,7 @@ export const PolicyFlow = () => {
 
   const { data: registry, isLoading: registryLoading } = useDeployedContractInfo({ contractName: "PolicyRegistry" });
 
-  const { data: nextPolicyId } = useScaffoldReadContract({
+  const { data: nextPolicyId, refetch: refetchPolicyCount } = useScaffoldReadContract({
     contractName: "PolicyRegistry",
     functionName: "nextPolicyId",
     // Re-read after a write rather than waiting for the poll interval.
@@ -56,7 +56,12 @@ export const PolicyFlow = () => {
       <section>
         <h2 className="mb-3 text-xl font-semibold">Create a policy</h2>
         {isConnected ? (
-          <PolicyForm onCreated={() => setRefreshKey(k => k + 1)} />
+          <PolicyForm
+            onCreated={() => {
+              void refetchPolicyCount();
+              setRefreshKey(k => k + 1);
+            }}
+          />
         ) : (
           <div className="rounded-box border border-base-300 p-6">
             <p className="text-base-content/70">

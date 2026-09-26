@@ -1,5 +1,26 @@
 # Evidence
 
+## How to use this record
+
+**Deployment status:** the local `PolicyRegistry.fund()` now rejects funding
+outside Draft/Active states and at or after the deadline. The deployed contracts
+listed below predate this fix. Their transaction and verification links remain
+historical evidence, not proof that the deployed demo has the new guards.
+No replacement deployment has been made.
+
+This is a historical deployment record, not a claim that the current local
+checkout has passed every submission gate. The linked successful settlement
+was checked independently during the local review; the other historical
+verification claims have not all been repeated. See [README.md](README.md)
+for current validation scope and limitations.
+
+HCS records were published separately by an operator. Their ordering does not
+prove that they capture every contract event or independently validate the
+operator's claims. This file does not demonstrate this deployment completing
+an HSS scheduled expiry.
+
+## Recorded deployment
+
 Everything below happened on Hedera testnet on **21 September 2026** and can
 be checked without running this repository, without a wallet, and without
 asking anyone for access. Every link goes to HashScan or the public mirror
@@ -34,8 +55,8 @@ parse error that reads like an explorer outage.
 
 ### Feeds registered, each with its own bound
 
-This is the central claim of the template, on-chain. Seven feeds, seven
-different staleness bounds, no global default:
+Seven feeds, each registered with an explicit staleness bound and no global
+default. Several feeds share the same configured value:
 
 | Asset | Proxy | `maxAge` |
 | --- | --- | --- |
@@ -47,15 +68,11 @@ different staleness bounds, no global default:
 | USDT/USD | `0x06823de8E77d708C4cB72Cbf04495D67afF4Bd37` | 86,400s |
 | DAI/USD | `0xdA2aBF7C90aDC73CDF5cA8d720B87bD5F5863389` | 86,400s |
 
-Check any of them yourself:
-
-```bash
-curl -s -X POST https://testnet.hashio.io/api \
-  -H 'content-type: application/json' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"to":"0x348C2590D0Ea01daEbD4d907B83F5752FfC577DF","data":"0x..."},"latest"]}'
-```
-
-Or just open [`/feeds`](#), which does it on page load with no credentials.
+Open `/feeds` in the running app to read live prices and compare them with
+the frontend's configured bounds. To verify the deployed configuration itself,
+use the contract debugger to read `ChainlinkPriceSource.maxAgeOf(asset)`, where
+`asset` is the keccak256 hash of the pair name (for example, `HBAR/USD`). The
+frontend table is not a substitute for checking owner-changeable on-chain settings.
 
 ---
 
@@ -78,11 +95,10 @@ Policy **#1**, against the real HBAR/USD Chainlink feed.
 | Feed bound applied | 3,600s — HBAR/USD carries the tightest one |
 | Paid to beneficiary | **1.0 HBAR** |
 
-**The settler is neither the creator nor the beneficiary.** That is the part
-worth checking: settlement is permissionless because the decision rests on
-what the price source says, not on who is asking. A beneficiary who depended
-on the creator's goodwill to get paid would not have a guarantee, they would
-have a promise.
+**The settler is neither the creator nor the beneficiary.** This demonstrates
+permissionless submission through the deployed settlement contract. Execution
+still depends on the configured source, contract state, available fees and
+the owner-controlled settings described in README.md.
 
 ### I1, on the live chain
 
@@ -151,8 +167,9 @@ Read the whole thing with no credentials:
 curl -s "https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10651678/messages?limit=100&order=asc"
 ```
 
-The first three records — the successful lifecycle. The topic now holds 18,
-including the expiries and refunds the failure demos produced:
+Abbreviated examples of the first three records show the successful lifecycle.
+The historical capture held 18 records, including expiries and refunds from
+the failure demos; query the topic for its current contents and full hashes:
 
 ```json
 {"v":1,"kind":"policy_created","policyId":1,"at":1790012394,"assetHash":"0x2c03d7a8…cfa908"}

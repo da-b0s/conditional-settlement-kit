@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef } from "react";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Bars3Icon,
@@ -74,6 +74,7 @@ export const HeaderMenuLinks = () => {
             >
               {icon}
               <span>{label}</span>
+              <NavigationStatus />
             </Link>
           </li>
         );
@@ -81,6 +82,16 @@ export const HeaderMenuLinks = () => {
     </>
   );
 };
+
+function NavigationStatus() {
+  const { pending } = useLinkStatus();
+  return pending ? (
+    <span role="status">
+      <span className="loading loading-spinner loading-xs" aria-hidden="true" />
+      <span className="sr-only">Loading page</span>
+    </span>
+  ) : null;
+}
 
 /**
  * Site header

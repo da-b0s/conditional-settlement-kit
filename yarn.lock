@@ -3609,6 +3609,7 @@ __metadata:
     "@trivago/prettier-plugin-sort-imports": ^4.3.0
     "@types/node": ^18.19.50
     "@types/react": ^19.0.7
+    "@types/react-dom": ~19.2.0
     abitype: 1.0.6
     blo: ^1.2.0
     burner-connector: 0.0.20
@@ -4932,6 +4933,15 @@ __metadata:
   dependencies:
     "@types/node": "*"
   checksum: 7a10d298a9987dc4f0cdfdc5171dabafaf0945cc97e5daa6b609e726a57aa4a48ae0e966c68379ef390d61d3cd6621b9b04214bb16b42f5486a46349e1db254d
+  languageName: node
+  linkType: hard
+
+"@types/react-dom@npm:~19.2.0":
+  version: 19.2.7
+  resolution: "@types/react-dom@npm:19.2.7"
+  peerDependencies:
+    "@types/react": ^19.2.0
+  checksum: 3968ecdb510ca1892b14453f72dd045f6bc06d454dd60c79078fc3f0b43560b630d92c130ca94274f379c757de8f0b938720f614a9d58eeee785f912f05aa515
   languageName: node
   linkType: hard
 

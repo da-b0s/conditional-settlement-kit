@@ -47,6 +47,8 @@
  */
 import * as dotenv from "dotenv";
 import { deployments, ethers } from "hardhat";
+import type { PolicyRegistry } from "../typechain-types";
+import type { TypedDeferredTopicFilter, TypedEventLog } from "../typechain-types/common";
 import { buildEvidence, type EvidenceKind } from "../../nextjs/lib/settlement/evidence";
 import { readEvidence, type HederaNetwork } from "../../nextjs/lib/settlement/hcs";
 import { operatorFromEnv, publishEvidence } from "../../nextjs/lib/settlement/hcsPublisher";
@@ -54,7 +56,10 @@ import { operatorFromEnv, publishEvidence } from "../../nextjs/lib/settlement/hc
 dotenv.config();
 
 /** Contract event -> evidence kind. Only these reach the topic. */
-const EVENTS: { event: string; kind: EvidenceKind }[] = [
+type EvidenceEventName = "PolicyCreated" | "PolicyTriggered" | "PolicySettled" | "PolicyExpired" | "PolicyRefunded";
+type EvidenceEvent = PolicyRegistry["filters"][EvidenceEventName];
+
+const EVENTS: { event: EvidenceEventName; kind: EvidenceKind }[] = [
   { event: "PolicyCreated", kind: "policy_created" },
   { event: "PolicyTriggered", kind: "triggered" },
   { event: "PolicySettled", kind: "settled" },
@@ -83,7 +88,7 @@ async function main() {
   }
   const network = (operator.network ?? "testnet") as HederaNetwork;
 
-  const registry = await ethers.getContract("PolicyRegistry");
+  const registry = await ethers.getContract<PolicyRegistry>("PolicyRegistry");
   const address = await registry.getAddress();
   console.log(`Reading PolicyRegistry at ${address}`);
 
@@ -106,8 +111,8 @@ async function main() {
   const latest = await ethers.provider.getBlockNumber();
   const WINDOW = 250_000;
 
-  const queryChunked = async (filter: Parameters<typeof registry.queryFilter>[0]) => {
-    const found = [];
+  const queryChunked = async (filter: TypedDeferredTopicFilter<EvidenceEvent>) => {
+    const found: TypedEventLog<EvidenceEvent>[] = [];
     for (let from = deployedAt; from <= latest; from += WINDOW) {
       const to = Math.min(from + WINDOW - 1, latest);
       found.push(...(await registry.queryFilter(filter, from, to)));

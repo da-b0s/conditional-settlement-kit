@@ -1,5 +1,8 @@
+import Form from "next/form";
 import type { Metadata } from "next";
 import { ExclamationTriangleIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
+import { ReadEvidenceButton } from "~~/components/ReadEvidenceButton";
+import { RetryRead } from "~~/components/RetryRead";
 import { type EvidenceTrail, readEvidence, topicUrl, trailForPolicy } from "~~/lib/settlement/hcs";
 import { ALLOWED_TRANSITIONS, type PolicyState } from "~~/lib/settlement/invariants";
 
@@ -61,7 +64,7 @@ export default async function EvidencePage({ searchParams }: { searchParams: Pro
         </p>
       </header>
 
-      <form method="GET" className="flex flex-wrap items-end gap-3 rounded-box border border-base-300 p-4">
+      <Form action="/evidence" className="flex flex-wrap items-end gap-3 rounded-box border border-base-300 p-4">
         <label className="form-control grow">
           <span className="label-text mb-1">Topic ID</span>
           <input
@@ -74,19 +77,21 @@ export default async function EvidencePage({ searchParams }: { searchParams: Pro
             aria-describedby="topic-help"
           />
         </label>
-        <button type="submit" className="btn btn-primary">
-          Read the trail
-        </button>
+        <ReadEvidenceButton />
         <p id="topic-help" className="w-full text-xs text-base-content/60">
           Any topic on Hedera testnet. Messages that are not evidence records are listed as unreadable rather than
           hidden.
         </p>
-      </form>
+      </Form>
 
       {error && (
         <div role="alert" className="alert alert-error mt-6">
           <ExclamationTriangleIcon className="h-5 w-5 shrink-0" />
-          <span>{error}</span>
+          <div>
+            <p>{error}</p>
+            <p className="mt-1 text-sm">Check the topic ID, or try again if the network is unavailable.</p>
+            <RetryRead />
+          </div>
         </div>
       )}
 

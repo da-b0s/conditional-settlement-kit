@@ -9,13 +9,12 @@ This is the **Conditional Settlement Kit**: a scaffold-hbar template for
 price-triggered settlement. Escrow a payout, attach it to a price condition,
 and let anyone settle it once the condition holds.
 
-The product is not "an oracle wrapper". Chainlink on Hedera hands you seven
-feeds that all declare the same 24-hour heartbeat while behaving completely
-differently, and every tutorial written against them uses one global
-`maxAge`. That is wrong in both directions, and the dangerous direction is
-silent. This template stores the staleness bound **per feed, with no global
-default**, and proves the need for it from live data on a page that requires
-no wallet.
+The implemented use case is price-triggered HBAR escrow using Chainlink.
+The template stores a freshness limit **per feed, with no global default**.
+Historical observations illustrate why applications may choose different
+limits; they do not prove every shared limit is unsafe. Milestone payments,
+delivery verification and other non-price conditions are future adaptations.
+See README.md for current scope, owner permissions and known limitations.
 
 Six invariants in `lib/settlement/invariants.ts` are the actual deliverable.
 Everything else exists to uphold or demonstrate one of them.
@@ -35,9 +34,9 @@ yarn install
 
 # Quality — all four must pass before any commit
 yarn lint
-yarn next:test        # vitest, 88 tests, hermetic and offline
+yarn next:test        # vitest, 137 tests at the latest local check, offline
 yarn next:build
-yarn hardhat:test     # 61 tests, ~12 seconds
+yarn hardhat:test     # 77 tests including funding guards; timing varies
 
 # The live measurement. Needs the network, no credentials.
 yarn next:test:live
@@ -49,7 +48,7 @@ yarn next:dev         # http://localhost:3000
 yarn hardhat:compile
 yarn hardhat:deploy --network hederaTestnet
 
-# Evidence topic (the one command that needs an operator)
+# Evidence topic (needs a funded operator, as does evidence publishing)
 yarn evidence:topic
 ```
 
@@ -76,8 +75,9 @@ UI.
 Consumed in two places, neither of which is a hook:
 
 - **Server Components** (`app/page.tsx`, `app/feeds/page.tsx`,
-  `app/evidence/page.tsx`) call it directly. `/` and `/feeds` ship 173 bytes
-  of page JavaScript between them; `/evidence` ships 136.
+  `app/evidence/page.tsx`) call it directly. Small client components provide
+  submission and retry feedback; shared wallet providers also contribute
+  JavaScript. Do not describe route-only bundle sizes as the total download.
 - **Client components** under `app/policies/_components/` use the scaffold
   hooks for wallet work, and import `lib/settlement/feeds.ts` for the feed
   table only.
@@ -200,11 +200,12 @@ the same day:
 | DAI/USD age | 23.1 hours | 27 minutes |
 | feed a 1-hour global bound would wrongly reject | USDC, USDT, DAI | BTC/USD |
 
-Every specific number moved within hours. The structure did not: some feeds
-are minutes old, others hours, **all of them in spec**, and no single bound
-fits them. `feedReader.integration.test.ts` re-takes this live and asserts the
-structure rather than the constants, so the argument cannot quietly stop being
-true. Run `yarn next:test:live`.
+These are historical measurements. Being within a heartbeat does not establish
+fitness for an application's payout, and rejecting such a reading is not
+necessarily wrong. `feedReader.integration.test.ts` includes live assumptions
+about age spread and configured limits; those can fail as network conditions
+change. Keep live measurements separate from hermetic correctness tests.
+Run `yarn next:test:live` to inspect the current readings.
 
 ### 8. Testing rules
 

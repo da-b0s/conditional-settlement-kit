@@ -72,26 +72,31 @@ describe("parseOperatorKey", () => {
 describe("operatorFromEnv", () => {
   it("returns null when nothing is configured — the normal state here", () => {
     // Most of this template needs no operator, so absence must not throw.
-    expect(operatorFromEnv({} as NodeJS.ProcessEnv)).toBeNull();
+    expect(operatorFromEnv({ NODE_ENV: "test" } as NodeJS.ProcessEnv)).toBeNull();
   });
 
   it("names the half that is missing rather than failing vaguely", () => {
-    expect(() => operatorFromEnv({ HEDERA_OPERATOR_KEY: RAW_ECDSA } as NodeJS.ProcessEnv)).toThrow(
+    expect(() => operatorFromEnv({ NODE_ENV: "test", HEDERA_OPERATOR_KEY: RAW_ECDSA } as NodeJS.ProcessEnv)).toThrow(
       /HEDERA_OPERATOR_ID is not/,
     );
-    expect(() => operatorFromEnv({ HEDERA_OPERATOR_ID: "0.0.1" } as NodeJS.ProcessEnv)).toThrow(
+    expect(() => operatorFromEnv({ NODE_ENV: "test", HEDERA_OPERATOR_ID: "0.0.1" } as NodeJS.ProcessEnv)).toThrow(
       /HEDERA_OPERATOR_KEY is not/,
     );
   });
 
   it("rejects an account id that is not one", () => {
     expect(() =>
-      operatorFromEnv({ HEDERA_OPERATOR_ID: "0x1234", HEDERA_OPERATOR_KEY: RAW_ECDSA } as NodeJS.ProcessEnv),
+      operatorFromEnv({
+        NODE_ENV: "test",
+        HEDERA_OPERATOR_ID: "0x1234",
+        HEDERA_OPERATOR_KEY: RAW_ECDSA,
+      } as NodeJS.ProcessEnv),
     ).toThrow(PublishFailed);
   });
 
   it("carries the key type hint through", () => {
     const op = operatorFromEnv({
+      NODE_ENV: "test",
       HEDERA_OPERATOR_ID: "0.0.1",
       HEDERA_OPERATOR_KEY: RAW_ECDSA,
       HEDERA_KEY_TYPE: "ed25519",
@@ -101,10 +106,15 @@ describe("operatorFromEnv", () => {
 
   it("defaults to testnet and refuses an unknown network", () => {
     expect(
-      operatorFromEnv({ HEDERA_OPERATOR_ID: "0.0.1", HEDERA_OPERATOR_KEY: RAW_ECDSA } as NodeJS.ProcessEnv)?.network,
+      operatorFromEnv({
+        NODE_ENV: "test",
+        HEDERA_OPERATOR_ID: "0.0.1",
+        HEDERA_OPERATOR_KEY: RAW_ECDSA,
+      } as NodeJS.ProcessEnv)?.network,
     ).toBe("testnet");
     expect(() =>
       operatorFromEnv({
+        NODE_ENV: "test",
         HEDERA_OPERATOR_ID: "0.0.1",
         HEDERA_OPERATOR_KEY: RAW_ECDSA,
         HEDERA_NETWORK: "devnet",

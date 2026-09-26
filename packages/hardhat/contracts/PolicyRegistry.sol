@@ -93,6 +93,7 @@ contract PolicyRegistry {
     error NotYetExpired(uint256 policyId, uint64 expiry, uint256 nowTs);
     error AlreadyExpired(uint256 policyId, uint64 expiry, uint256 nowTs);
     error NothingToFund();
+    error FundingNotAllowed(uint256 policyId, State state);
     error TransferFailed(address to, uint256 amount);
 
     modifier onlyOwner() {
@@ -184,9 +185,12 @@ contract PolicyRegistry {
     /// @dev A policy cannot become Active while it promises more than it holds.
     ///      Checking here rather than at settlement means the beneficiary can
     ///      read `state == Active` and know the money is actually present.
+    ///      Only Draft and Active policies accept funds, strictly before expiry.
     function fund(uint256 policyId) external payable {
         Policy storage p = _policies[policyId];
         if (p.state == State.None) revert UnknownPolicy(policyId);
+        if (p.state != State.Draft && p.state != State.Active) revert FundingNotAllowed(policyId, p.state);
+        if (block.timestamp >= p.expiry) revert AlreadyExpired(policyId, p.expiry, block.timestamp);
         if (msg.value == 0) revert NothingToFund();
 
         p.escrow += msg.value;

@@ -82,8 +82,7 @@ describe("I3 — payout never exceeds escrow", () => {
     expect((await ethers.provider.getBalance(d.beneficiary.address)) - beneficiaryBefore).to.equal(
       ethers.parseEther("1"),
     );
-    // The surplus goes back to whoever funded it, not to the beneficiary and
-    // not to the contract.
+    // The surplus goes back to the creator, who funded this policy.
     expect((await ethers.provider.getBalance(d.creator.address)) - creatorBefore).to.equal(ethers.parseEther("2"));
   });
 
@@ -106,7 +105,7 @@ describe("I3 — payout never exceeds escrow", () => {
     expect(await d.registry.totalEscrowed()).to.equal(0n);
   });
 
-  it("funding in instalments is allowed and accumulates", async () => {
+  it("rejects a partial first deposit and activates only on a fully funded deposit", async () => {
     const expiry = (await chainNow()) + 86_400;
     const tx = await d.registry
       .connect(d.creator)
@@ -233,4 +232,101 @@ describe("I3 — payout never exceeds escrow", () => {
       expect(await d.registry.stateOf(policyId)).to.equal(State.Expired);
     });
   });
+});
+
+describe("Funding window", () => {
+  let d: Deployed;
+  const deposit = ethers.parseEther("1");
+
+  beforeEach(async () => {
+    d = await deploySystem();
+  });
+
+  async function snapshot(policyId: bigint) {
+    return {
+      policy: Array.from(await d.registry.getPolicy(policyId)),
+      total: await d.registry.totalEscrowed(),
+      held: await ethers.provider.getBalance(await d.registry.getAddress()),
+      creator: await ethers.provider.getBalance(d.creator.address),
+      beneficiary: await ethers.provider.getBalance(d.beneficiary.address),
+    };
+  }
+
+  for (const state of ["Triggered", "Settled", "Expired", "Refunded"] as const) {
+    it(`refuses funding in ${state} without changing escrow or recipient balances`, async () => {
+      // Leave another policy funded to catch accidental changes to aggregate escrow.
+      await createFundedPolicy(d);
+      const id = await createFundedPolicy(d, { expiryInSeconds: HOUR });
+      if (state === "Triggered") {
+        // Reach the normally atomic intermediate state through the authorized path.
+        await d.registry.setSettlement(d.stranger.address);
+        await d.registry.connect(d.stranger).markTriggered(id, at18("0.0891"), await chainNow());
+      } else if (state === "Settled") {
+        await d.settlement.connect(d.stranger).trigger(id);
+      } else {
+        const policy = await d.registry.getPolicy(id);
+        await ethers.provider.send("evm_setNextBlockTimestamp", [Number(policy.expiry)]);
+        await d.registry.connect(d.stranger).expire(id);
+        if (state === "Refunded") await d.registry.connect(d.creator).refund(id);
+      }
+      expect(await d.registry.stateOf(id)).to.equal(State[state]);
+      const before = await snapshot(id);
+      await expect(d.registry.connect(d.stranger).fund(id, { value: deposit }))
+        .to.be.revertedWithCustomError(d.registry, "FundingNotAllowed")
+        .withArgs(id, State[state]);
+      // The rejected sender can still pay gas; no deposit is retained or paid out.
+      expect(await snapshot(id)).to.deep.equal(before);
+    });
+  }
+
+  for (const state of ["Draft", "Active"] as const) {
+    for (const offset of [-1, 0, 1]) {
+      it(`${state}: funding ${offset} seconds from the deadline respects the boundary`, async () => {
+        const expiry = (await chainNow()) + HOUR;
+        await d.registry
+          .connect(d.creator)
+          .createPolicy(d.beneficiary.address, HBAR_USD, at18("0.08"), true, deposit, expiry);
+        const id = (await d.registry.nextPolicyId()) - 1n;
+        if (state === "Active") await d.registry.connect(d.creator).fund(id, { value: deposit });
+        const before = await snapshot(id);
+        await ethers.provider.send("evm_setNextBlockTimestamp", [expiry + offset]);
+        const transaction = d.registry.connect(d.stranger).fund(id, { value: deposit });
+        if (offset < 0) {
+          await expect(transaction).to.emit(d.registry, "PolicyFunded");
+          expect(await d.registry.stateOf(id)).to.equal(State.Active);
+          expect((await d.registry.getPolicy(id)).escrow).to.equal(before.total + deposit);
+          expect(await d.registry.totalEscrowed()).to.equal(before.total + deposit);
+          expect(await ethers.provider.getBalance(await d.registry.getAddress())).to.equal(before.held + deposit);
+        } else {
+          await expect(transaction)
+            .to.be.revertedWithCustomError(d.registry, "AlreadyExpired")
+            .withArgs(id, expiry, expiry + offset);
+          expect(await snapshot(id)).to.deep.equal(before);
+        }
+      });
+    }
+  }
+
+  for (const outcome of ["settle", "refund"] as const) {
+    it(`an Active top-up remains recoverable through ${outcome}`, async () => {
+      const id = await createFundedPolicy(d, { expiryInSeconds: HOUR });
+      await d.registry.connect(d.stranger).fund(id, { value: deposit });
+      expect((await d.registry.getPolicy(id)).escrow).to.equal(deposit * 2n);
+      const creatorBefore = await ethers.provider.getBalance(d.creator.address);
+      if (outcome === "settle") {
+        await expect(d.settlement.connect(d.stranger).trigger(id)).to.changeEtherBalances(
+          [d.beneficiary, d.creator],
+          [deposit, deposit],
+        );
+        expect(await ethers.provider.getBalance(d.creator.address)).to.equal(creatorBefore + deposit);
+      } else {
+        await ethers.provider.send("evm_setNextBlockTimestamp", [Number((await d.registry.getPolicy(id)).expiry)]);
+        await d.registry.connect(d.stranger).expire(id);
+        await expect(d.registry.connect(d.creator).refund(id)).to.changeEtherBalance(d.creator, deposit * 2n);
+      }
+      expect((await d.registry.getPolicy(id)).escrow).to.equal(0n);
+      expect(await d.registry.totalEscrowed()).to.equal(0n);
+      expect(await ethers.provider.getBalance(await d.registry.getAddress())).to.equal(0n);
+    });
+  }
 });

@@ -34,7 +34,9 @@
  * either refused or refunded.
  */
 import * as dotenv from "dotenv";
+import type { Interface } from "ethers";
 import { ethers } from "hardhat";
+import type { ChainlinkPriceSource, PolicyRegistry, Settlement } from "../typechain-types";
 import { hbarAmount } from "../../nextjs/lib/settlement/units";
 
 dotenv.config();
@@ -65,7 +67,7 @@ const outcomes: Outcome[] = [];
  * them everything, and that is the difference between evidence and a
  * screenshot of something going red.
  */
-function decodeRevert(error: unknown, iface: ethers.Interface): string {
+function decodeRevert(error: unknown, iface: Interface): string {
   const err = error as { data?: string; info?: { error?: { data?: string } }; shortMessage?: string; message?: string };
   const data = err.data ?? err.info?.error?.data;
   // >= 10, not > 10. A custom error with NO arguments is exactly the 4-byte
@@ -96,7 +98,7 @@ function decodeRevert(error: unknown, iface: ethers.Interface): string {
 async function expectRevert(
   id: string,
   what: string,
-  iface: ethers.Interface,
+  iface: Interface,
   probe: () => Promise<unknown>,
   send: () => Promise<{ hash: string; wait(): Promise<unknown> }>,
 ) {
@@ -130,9 +132,9 @@ async function main() {
   const one = hbarAmount("1", chainId);
   const tenth = hbarAmount("0.1", chainId);
 
-  const registry = await ethers.getContract("PolicyRegistry", creator);
-  const settlement = await ethers.getContract("Settlement", creator);
-  const source = await ethers.getContract("ChainlinkPriceSource", creator);
+  const registry = await ethers.getContract<PolicyRegistry>("PolicyRegistry", creator);
+  const settlement = await ethers.getContract<Settlement>("Settlement", creator);
+  const source = await ethers.getContract<ChainlinkPriceSource>("ChainlinkPriceSource", creator);
 
   console.log(`registry   ${await registry.getAddress()}`);
   console.log(`settlement ${await settlement.getAddress()}`);

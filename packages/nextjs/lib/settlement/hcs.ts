@@ -28,6 +28,7 @@
  * Framework-free. See invariants.ts.
  */
 import type { EvidenceKind, EvidenceRecord } from "./evidence";
+import { withReadDeadline } from "./readDeadline";
 
 export type HederaNetwork = "mainnet" | "testnet" | "previewnet";
 
@@ -137,6 +138,14 @@ export async function readEvidence(
   topicId: string,
   opts: { network?: HederaNetwork; maxPages?: number; fetchImpl?: typeof fetch } = {},
 ): Promise<EvidenceTrail> {
+  return withReadDeadline(signal => readEvidenceWithinDeadline(topicId, opts, signal));
+}
+
+async function readEvidenceWithinDeadline(
+  topicId: string,
+  opts: { network?: HederaNetwork; maxPages?: number; fetchImpl?: typeof fetch },
+  signal: AbortSignal,
+): Promise<EvidenceTrail> {
   const network = opts.network ?? "testnet";
   const maxPages = opts.maxPages ?? 10;
   const doFetch = opts.fetchImpl ?? fetch;
@@ -151,7 +160,7 @@ export async function readEvidence(
 
   let path: string | null = first;
   for (let page = 0; page < maxPages && path; page++) {
-    const response: Response = await doFetch(`${base}${path}`);
+    const response: Response = await doFetch(`${base}${path}`, { signal, cache: "no-store" });
     if (response.status === 404) {
       throw new TopicReadFailed(`topic ${topicId} does not exist on ${network}`, 404);
     }
@@ -195,9 +204,12 @@ export async function readEvidence(
   // The entity endpoint does 404 properly, so ask it — but only when the list
   // came back empty. The normal path stays one request.
   if (entries.length === 0) {
-    const probe = await doFetch(`${base}/api/v1/topics/${topicId}`);
+    const probe = await doFetch(`${base}/api/v1/topics/${topicId}`, { signal, cache: "no-store" });
     if (probe.status === 404) {
       throw new TopicReadFailed(`topic ${topicId} does not exist on ${network}`, 404);
+    }
+    if (!probe.ok) {
+      throw new TopicReadFailed(`Could not confirm this topic. Please try again.`, probe.status);
     }
   }
 

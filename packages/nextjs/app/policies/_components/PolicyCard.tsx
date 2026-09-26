@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Address, HbarInput } from "@scaffold-hbar-ui/components";
 import { formatUnits, keccak256, toHex } from "viem";
 import { useAccount } from "wagmi";
@@ -28,6 +28,8 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
   const { address } = useAccount();
   const { targetNetwork } = useTargetNetwork();
   const [fundAmount, setFundAmount] = useState("");
+  const [problem, setProblem] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   const { data: policy, refetch } = useScaffoldReadContract({
     contractName: "PolicyRegistry",
@@ -43,6 +45,12 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
     contractName: "Settlement",
   });
 
+  useEffect(() => {
+    // Policy data can stay unchanged while its deadline passes.
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   if (!policy) return <div className="skeleton h-32 w-full" />;
 
   // getPolicy returns a struct that abitype widens to `any` for these fields,
@@ -56,12 +64,15 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
   const pair = PAIR_BY_HASH.get(policy.asset.toLowerCase());
   const isCreator = address?.toLowerCase() === policy.creator.toLowerCase();
   const deadline = new Date(Number(policy.expiry) * 1000);
-  const pastDeadline = deadline.getTime() < Date.now();
+  const pastDeadline = deadline.getTime() <= now;
   const busy = registryMining || settlementMining;
 
   const run = async (fn: () => Promise<unknown>) => {
+    setProblem(null);
     try {
       await fn();
+    } catch (caught) {
+      setProblem(caught instanceof Error ? caught.message.split("\n")[0] : String(caught));
     } finally {
       // Refetch whether it succeeded or not: a revert still means the local
       // view may be stale relative to why it reverted.
@@ -117,7 +128,7 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
           Showing a disabled Settle button on a refunded policy invites the
           question "why can't I", which the state already answers. */}
       <div className="mt-4 flex flex-wrap items-end gap-3">
-        {(state === "Draft" || state === "Active") && (
+        {(state === "Draft" || state === "Active") && !pastDeadline && (
           <div className="flex items-end gap-2">
             <label className="form-control">
               <span className="label-text mb-1 text-xs">Fund escrow</span>
@@ -155,7 +166,7 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
           </button>
         )}
 
-        {state === "Active" && pastDeadline && (
+        {(state === "Draft" || state === "Active") && pastDeadline && (
           <button
             className="btn btn-outline btn-sm"
             disabled={busy}
@@ -180,7 +191,13 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
         )}
       </div>
 
-      {state === "Draft" && escrow < maxPayout && (
+      {problem && (
+        <p role="alert" className="mt-3 text-sm text-error">
+          {problem}
+        </p>
+      )}
+
+      {state === "Draft" && !pastDeadline && escrow < maxPayout && (
         <p className="mt-3 text-sm text-warning">
           Needs {contractAmountToHbar(maxPayout - escrow, targetNetwork.id)} HBAR more before it can activate. The
           contract will not let a policy promise more than it holds.

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { RetryRead } from "~~/components/RetryRead";
 import { DEFAULT_RPC, formatAge, formatAnswer, readLiveFeeds } from "~~/lib/settlement/feedReader";
 import { DECLARED_HEARTBEAT_SECONDS, TESTNET_FEEDS } from "~~/lib/settlement/feeds";
 
@@ -18,11 +19,10 @@ export const metadata: Metadata = {
  * asked of the visitor. Someone evaluating this template can check its
  * central claim before deciding whether to trust it with anything.
  *
- * `revalidate` rather than `force-dynamic`: the feeds move on the order of
- * minutes, so a one-minute cache keeps the page honest while sparing the
- * public endpoint a round trip per visitor.
+ * Read on request so a retry cannot serve a cached outage. Requests have a
+ * deadline and partial results remain visible when only some feeds fail.
  */
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 const HOUR = 3600;
 
@@ -30,6 +30,22 @@ export default async function FeedsPage() {
   const report = await readLiveFeeds({ rpcUrl: DEFAULT_RPC.testnet }).catch(error => ({
     error: error instanceof Error ? error.message : String(error),
   }));
+  if (!("error" in report) && report.feeds.length === 0) {
+    return (
+      <div className="mx-auto w-full max-w-5xl px-4 py-10">
+        <h1 className="text-3xl font-bold">Live feeds</h1>
+        <div role="alert" className="alert alert-warning mt-6">
+          <ExclamationTriangleIcon className="h-5 w-5 shrink-0" />
+          <div>
+            <p className="font-semibold">Live prices are unavailable right now.</p>
+            <p>The network may be slow or unavailable. The feed configuration is shown below.</p>
+            <RetryRead />
+          </div>
+        </div>
+        <StaticTable />
+      </div>
+    );
+  }
 
   // The whole endpoint failed. Say so plainly rather than rendering an empty
   // table that looks like "there are no feeds".
@@ -45,6 +61,7 @@ export default async function FeedsPage() {
               {report.error}. The feed addresses and bounds below are still what this template would enforce — only the
               live reading is missing.
             </p>
+            <RetryRead />
           </div>
         </div>
         <StaticTable />
@@ -147,6 +164,7 @@ export default async function FeedsPage() {
                 </li>
               ))}
             </ul>
+            <RetryRead />
           </div>
         </div>
       )}
@@ -154,7 +172,7 @@ export default async function FeedsPage() {
       <footer className="mt-6 space-y-1 text-xs text-base-content/60">
         <p>
           Read from <span className="font-mono">{report.rpcUrl}</span> at {new Date(report.readAt * 1000).toISOString()}
-          . Cached for {revalidate} seconds.
+          . Read when this page was requested.
         </p>
         <p>
           The same measurement runs as a test: <span className="font-mono">yarn test:live</span>. It asserts the shape

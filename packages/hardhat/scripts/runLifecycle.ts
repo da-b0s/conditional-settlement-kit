@@ -26,6 +26,7 @@
  */
 import * as dotenv from "dotenv";
 import { ethers } from "hardhat";
+import type { ChainlinkPriceSource, PolicyRegistry, Settlement } from "../typechain-types";
 import { hbarAmount } from "../../nextjs/lib/settlement/units";
 
 dotenv.config();
@@ -74,8 +75,8 @@ async function main() {
   const chainId = Number((await provider.getNetwork()).chainId);
   const { txValue: payoutTxValue, contractAmount: payoutContractAmount } = hbarAmount(ONE_HBAR, chainId);
 
-  const registry = await ethers.getContract("PolicyRegistry", creator);
-  const settlementRead = await ethers.getContract("Settlement", creator);
+  const registry = await ethers.getContract<PolicyRegistry>("PolicyRegistry", creator);
+  const settlementRead = await ethers.getContract<Settlement>("Settlement", creator);
   const registryAddress = await registry.getAddress();
   const settlementAddress = await settlementRead.getAddress();
 
@@ -99,7 +100,7 @@ async function main() {
 
   // What does the feed actually say right now? The threshold is picked from
   // this, so the policy is guaranteed to be settleable rather than hopeful.
-  const source = await ethers.getContract("ChainlinkPriceSource", creator);
+  const source = await ethers.getContract<ChainlinkPriceSource>("ChainlinkPriceSource", creator);
   const observation = await source.latest(HBAR_USD);
   const price18 = BigInt(observation.value);
   const observedAt = Number(observation.observedAt);
@@ -135,7 +136,7 @@ async function main() {
   const before = await provider.getBalance(beneficiary.address);
 
   // THE POINT: an account with no relationship to this policy settles it.
-  const settlementAsStranger = settlementRead.connect(settler) as typeof settlementRead;
+  const settlementAsStranger = settlementRead.connect(settler);
   const triggerHash = await record(
     "trigger() — by the stranger",
     await settlementAsStranger.trigger(policyId, { gasLimit: TRIGGER_GAS }),

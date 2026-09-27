@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PolicyCard } from "./PolicyCard";
 import { PolicyForm } from "./PolicyForm";
+import { WithdrawPanel } from "./WithdrawPanel";
 import { HederaPortalFaucet } from "@scaffold-hbar-ui/components";
 import { useAccount } from "wagmi";
 import { RainbowKitCustomConnectButton } from "~~/components/scaffold-hbar";
@@ -64,6 +65,7 @@ export const PolicyFlow = () => {
         </p>
         <HederaPortalFaucet showIcon />
       </div>
+      <WithdrawPanel />
       <section>
         <h2 className="mb-3 text-xl font-semibold">Create a policy</h2>
         {isConnected ? (

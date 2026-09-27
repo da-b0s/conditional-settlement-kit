@@ -38,6 +38,18 @@ const MIRROR_BASE: Record<HederaNetwork, string> = {
   previewnet: "https://previewnet.mirrornode.hedera.com",
 };
 
+/**
+ * This deployment's evidence topic on testnet, created for the contracts in
+ * contracts/deployedContracts.ts. Public configuration, not a secret, so it
+ * lives in code: a fresh clone opens /evidence on it with no env file.
+ * NEXT_PUBLIC_EVIDENCE_TOPIC overrides it for your own deployment.
+ */
+export const PROJECT_EVIDENCE_TOPIC = "0.0.10743528";
+
+export function projectEvidenceTopic(env: Record<string, string | undefined> = process.env): string {
+  return env.NEXT_PUBLIC_EVIDENCE_TOPIC?.trim() || PROJECT_EVIDENCE_TOPIC;
+}
+
 /** `0.0.12345`, the only form the mirror node accepts in this path. */
 const TOPIC_ID = /^\d+\.\d+\.\d+$/;
 

@@ -4,7 +4,13 @@ import type { Metadata } from "next";
 import { ExclamationTriangleIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import { ReadEvidenceButton } from "~~/components/ReadEvidenceButton";
 import { RetryRead } from "~~/components/RetryRead";
-import { type EvidenceTrail, readEvidence, topicUrl, trailForPolicy } from "~~/lib/settlement/hcs";
+import {
+  type EvidenceTrail,
+  projectEvidenceTopic,
+  readEvidence,
+  topicUrl,
+  trailForPolicy,
+} from "~~/lib/settlement/hcs";
 import { ALLOWED_TRANSITIONS, type PolicyState } from "~~/lib/settlement/invariants";
 
 export const metadata: Metadata = {
@@ -41,7 +47,8 @@ export default async function EvidencePage({ searchParams }: { searchParams: Pro
   // A deployment can name its own topic, so /evidence opens on something
   // useful rather than an empty field. An explicit ?topic= still wins —
   // auditing someone else's settlement is the normal case, not the exception.
-  const topicId = topic?.trim() || process.env.NEXT_PUBLIC_EVIDENCE_TOPIC?.trim() || undefined;
+  const projectTopic = projectEvidenceTopic();
+  const topicId = topic?.trim() || projectTopic;
 
   let trail: EvidenceTrail | null = null;
   let error: string | null = null;
@@ -109,7 +116,7 @@ export default async function EvidencePage({ searchParams }: { searchParams: Pro
         </div>
       )}
 
-      {topic && process.env.NEXT_PUBLIC_EVIDENCE_TOPIC && topic !== process.env.NEXT_PUBLIC_EVIDENCE_TOPIC && (
+      {topic && topic.trim() !== projectTopic && (
         <p className="mt-4 text-sm">
           <Link className="link text-primary" href="/evidence">
             Read this project&apos;s evidence topic

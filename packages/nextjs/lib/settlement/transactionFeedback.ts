@@ -29,6 +29,7 @@ const CONTRACT_ERRORS: readonly [RegExp, string][] = [
     "The deposit does not cover the payout. The first deposit must be at least the full payout.",
   ],
   [/FundingNotAllowed/i, "This policy no longer accepts deposits."],
+  [/NothingToWithdraw/i, "There is nothing to withdraw for this account."],
   [/NothingToFund/i, "Enter an amount above zero to fund this policy."],
   [/NotCreator/i, "Only the policy's creator can take the refund."],
   [/IllegalTransition/i, "This policy has already moved on. Refresh to see its current state."],

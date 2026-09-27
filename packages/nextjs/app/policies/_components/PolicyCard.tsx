@@ -266,8 +266,9 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
       {state === "Active" && <p className="mt-3 text-sm text-success">Fully funded. No further deposit is needed.</p>}
       {state === "Active" && escrow > maxPayout && (
         <p className="text-sm">
-          The extra {contractAmountToHbar(escrow - maxPayout, targetNetwork.id)} HBAR returns to the creator when this
-          policy settles. If it expires, the creator can reclaim the full escrow.
+          The extra {contractAmountToHbar(escrow - maxPayout, targetNetwork.id)} HBAR is credited to the creator when
+          this policy settles, and claimed with Withdraw at the top of this page. If it expires, the creator can reclaim
+          the full escrow.
         </p>
       )}
       {state === "Active" && !pastDeadline && (

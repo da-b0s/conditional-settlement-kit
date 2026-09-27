@@ -10,7 +10,6 @@ import { hederaTestnet } from "viem/chains";
 import { WagmiProvider } from "wagmi";
 import { Footer } from "~~/components/Footer";
 import { Header } from "~~/components/Header";
-import { LocalChainErrorBanner } from "~~/components/LocalChainErrorBanner";
 import { WalletReconnectGate } from "~~/components/WalletReconnectGate";
 import { BlockieAvatar } from "~~/components/scaffold-hbar";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
@@ -26,7 +25,6 @@ const ScaffoldHbarApp = ({ children }: { children: React.ReactNode }) => {
           Skip to content
         </a>
         <Header />
-        <LocalChainErrorBanner />
         <main id="main-content" tabIndex={-1} className="relative flex flex-col flex-1">
           {children}
         </main>

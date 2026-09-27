@@ -12,18 +12,11 @@ async function main() {
   const networkIndex = process.argv.indexOf("--network");
   const networkName = networkIndex !== -1 ? process.argv[networkIndex + 1] : config.defaultNetwork;
 
-  if (networkName === "localhost" || networkName === "hardhat") {
-    // Deploy command on the localhost network
-    const hardhat = spawn("hardhat", ["deploy", ...process.argv.slice(2)], {
-      stdio: "inherit",
-      env: process.env,
-      shell: process.platform === "win32",
-    });
-
-    hardhat.on("exit", code => {
-      process.exit(code || 0);
-    });
-    return;
+  if (networkName !== "hederaTestnet") {
+    // This template deploys to Hedera testnet only: the frontend targets it
+    // alone, and the Chainlink proxies it registers exist nowhere else.
+    console.log(`🚫️ Deploy to Hedera testnet: yarn hardhat:deploy --network hederaTestnet (got "${networkName}")`);
+    process.exit(1);
   }
 
   const encryptedKey = process.env.DEPLOYER_PRIVATE_KEY_ENCRYPTED;

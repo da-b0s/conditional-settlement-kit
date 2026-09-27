@@ -5,12 +5,9 @@ import { getTargetNetworks } from "~~/utils/scaffold-hbar";
 type NetworkOptionsProps = { hidden?: boolean; onSwitched?: () => void };
 export const NetworkOptions = ({ hidden = false, onSwitched }: NetworkOptionsProps) => {
   const { switchChain, isPending, error } = useSwitchChain();
-  const { chain, connector } = useAccount();
-  // Only offer deployed networks. Local RPC is for the development burner.
-  const alternatives = getTargetNetworks().filter(
-    network =>
-      network.id !== chain?.id && (network.id === 296 || (network.id === 31337 && connector?.id === "burnerWallet")),
-  );
+  const { chain } = useAccount();
+  // Only networks this app is configured for — Hedera testnet.
+  const alternatives = getTargetNetworks().filter(network => network.id !== chain?.id);
   if (hidden) return null;
   return (
     <>

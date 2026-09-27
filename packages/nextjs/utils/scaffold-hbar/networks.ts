@@ -59,7 +59,7 @@ export function getBlockExplorerAddressLink(network: chains.Chain, address: stri
   const blockExplorerBaseURL = network.blockExplorers?.default?.url;
 
   if (!blockExplorerBaseURL) {
-    return `/blockexplorer/address/${address}`;
+    return `https://hashscan.io/testnet/account/${address}`;
   }
 
   const pathSegment = HEDERA_CHAIN_IDS.has(network.id) ? "account" : "address";
@@ -67,8 +67,7 @@ export function getBlockExplorerAddressLink(network: chains.Chain, address: stri
 }
 
 export function getExplorerLink(network: chains.Chain, address?: string) {
-  if (network.id === chains.hardhat.id) return "/blockexplorer";
-  return address ? getBlockExplorerAddressLink(network, address) : network.blockExplorers?.default?.url ?? "/blockexplorer";
+  return address ? getBlockExplorerAddressLink(network, address) : network.blockExplorers?.default?.url ?? "https://hashscan.io/testnet";
 }
 
 /**

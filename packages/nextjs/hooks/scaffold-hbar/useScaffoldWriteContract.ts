@@ -96,7 +96,7 @@ export function useScaffoldWriteContract<TContractName extends ContractName>(
     if (submitting.current) throw new Error("A transaction is already awaiting confirmation.");
     if (!deployedContractData) {
       notification.error(
-        "Target Contract is not deployed. Deploy your contracts first with `yarn hardhat:deploy` or `yarn foundry:deploy`.",
+        "Target Contract is not deployed. Deploy with `yarn hardhat:deploy --network hederaTestnet`.",
       );
       throw new Error("The contract is not available on this network.");
     }
@@ -177,7 +177,7 @@ export function useScaffoldWriteContract<TContractName extends ContractName>(
   ) => {
     if (!deployedContractData) {
       notification.error(
-        "Target Contract is not deployed. Deploy your contracts first with `yarn hardhat:deploy` or `yarn foundry:deploy`.",
+        "Target Contract is not deployed. Deploy with `yarn hardhat:deploy --network hederaTestnet`.",
       );
       return;
     }

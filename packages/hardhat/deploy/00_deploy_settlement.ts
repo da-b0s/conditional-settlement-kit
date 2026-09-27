@@ -50,6 +50,13 @@ const deploySettlement: DeployFunction = async (hre: HardhatRuntimeEnvironment) 
   const { deployer } = await hre.getNamedAccounts();
   const { deploy, log } = hre.deployments;
 
+  // Hedera testnet only. The Chainlink proxies below exist nowhere else, and
+  // registering one on another chain reverts on its decimals() call.
+  const chainId = Number((await hre.ethers.provider.getNetwork()).chainId);
+  if (chainId !== 296) {
+    throw new Error(`This template deploys to Hedera testnet (chain 296), not chain ${chainId}.`);
+  }
+
   const source = await deploy("ChainlinkPriceSource", { from: deployer, log: true, autoMine: true });
   const registry = await deploy("PolicyRegistry", { from: deployer, log: true, autoMine: true });
   const settlement = await deploy("Settlement", {
@@ -63,52 +70,15 @@ const deploySettlement: DeployFunction = async (hre: HardhatRuntimeEnvironment) 
   const registryC = await hre.ethers.getContractAt("PolicyRegistry", registry.address);
   const settlementC = await hre.ethers.getContractAt("Settlement", settlement.address);
 
-  // On a local chain the Chainlink proxies do not exist. Registering them
-  // would revert on the decimals() call, so skip and say why rather than
-  // failing a deployment that is otherwise fine.
-  const chainId = Number((await hre.ethers.provider.getNetwork()).chainId);
-  const onHedera = chainId === 295 || chainId === 296 || chainId === 297;
-
-  if (!onHedera) {
-    // -------------------------------------------------------------------
-    // A LOCAL CHAIN GETS A MOCK FEED, SO THE WHOLE LIFECYCLE IS EXERCISABLE
-    // WITH NO TESTNET HBAR AND NO ACCOUNT.
-    //
-    // The real proxies exist only on Hedera and registering one here would
-    // revert on decimals(). Without a substitute, `trigger()` on a local
-    // chain fails with NoPriceSource and a reviewer cannot get past funding
-    // a policy — which makes the most interesting part of the template
-    // unreachable for anyone who has not yet obtained testnet HBAR.
-    //
-    // So: deploy MockAggregatorV3, register it as HBAR/USD, and say loudly
-    // that it is a mock. It is priced near the real feed and marked fresh,
-    // so a policy created with a sensible threshold settles immediately.
-    // -------------------------------------------------------------------
-    log(`Chain ${chainId} is not Hedera — the Chainlink proxies do not exist here.`);
-
-    const mock = await deploy("MockAggregatorV3", {
-      from: deployer,
-      // 8 decimals like every real feed, ~$0.09 like HBAR/USD, fresh now.
-      args: [8, 9_000_000, Math.floor(Date.now() / 1000)],
-      log: true,
-      autoMine: true,
-    });
-
-    const asset = assetKey("HBAR/USD");
-    await (await sourceC.registerFeed(asset, mock.address, 1 * HOUR)).wait();
-    log(`  registered HBAR/USD -> MOCK at ${mock.address} (maxAge 1h)`);
-    log("  THIS IS A MOCK FEED. It exists so the lifecycle can be demonstrated offline.");
-  } else {
-    for (const feed of FEEDS) {
-      const asset = assetKey(feed.pair);
-      try {
-        const tx = await sourceC.registerFeed(asset, feed.proxy, feed.maxAge);
-        await tx.wait();
-        log(`  registered ${feed.pair.padEnd(9)} maxAge ${String(feed.maxAge).padStart(6)}s  ${feed.proxy}`);
-      } catch (error) {
-        // One bad feed must not abort the rest. Report and continue.
-        log(`  FAILED ${feed.pair}: ${(error as Error).message.split("\n")[0]}`);
-      }
+  for (const feed of FEEDS) {
+    const asset = assetKey(feed.pair);
+    try {
+      const tx = await sourceC.registerFeed(asset, feed.proxy, feed.maxAge);
+      await tx.wait();
+      log(`  registered ${feed.pair.padEnd(9)} maxAge ${String(feed.maxAge).padStart(6)}s  ${feed.proxy}`);
+    } catch (error) {
+      // One bad feed must not abort the rest. Report and continue.
+      log(`  FAILED ${feed.pair}: ${(error as Error).message.split("\n")[0]}`);
     }
   }
 
@@ -119,10 +89,8 @@ const deploySettlement: DeployFunction = async (hre: HardhatRuntimeEnvironment) 
     log(`  registry.settlement -> ${settlement.address}`);
   }
 
-  // Point every asset the source actually knows about at it. On Hedera that
-  // is the seven registered feeds; on a local chain it is the single mock.
-  // Gating this on `onHedera` would leave the local mock registered with the
-  // source but unreachable from Settlement — funded policies, no settlement.
+  // Point every asset the source actually registered at it. A feed that
+  // failed to register above is skipped rather than wired to nothing.
   for (const feed of FEEDS) {
     const asset = assetKey(feed.pair);
     if (!(await sourceC.supportsAsset(asset))) continue;

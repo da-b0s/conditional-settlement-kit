@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { PolicyCard } from "./PolicyCard";
 import { PolicyForm } from "./PolicyForm";
+import { HederaPortalFaucet } from "@scaffold-hbar-ui/components";
 import { useAccount } from "wagmi";
+import { LocalFaucet } from "~~/components/LocalFaucet";
 import { RainbowKitCustomConnectButton } from "~~/components/scaffold-hbar";
 import { useDeployedContractInfo, useScaffoldReadContract } from "~~/hooks/scaffold-hbar";
+import { useTargetNetwork } from "~~/hooks/scaffold-hbar/useTargetNetwork";
 
 /**
  * The wallet-driven half of the kit.
@@ -18,6 +21,7 @@ import { useDeployedContractInfo, useScaffoldReadContract } from "~~/hooks/scaff
  */
 export const PolicyFlow = () => {
   const { isConnected } = useAccount();
+  const { targetNetwork } = useTargetNetwork();
   const [refreshKey, setRefreshKey] = useState(0);
 
   const { data: registry, isLoading: registryLoading } = useDeployedContractInfo({ contractName: "PolicyRegistry" });
@@ -53,6 +57,15 @@ export const PolicyFlow = () => {
 
   return (
     <div className="space-y-10">
+      <div className="rounded-box border border-base-300 p-4">
+        <p className="font-semibold">{targetNetwork.name}</p>
+        <p className="text-sm">
+          {targetNetwork.id === 296
+            ? "These are real testnet transactions using test HBAR. Your wallet approves each transaction. Fund your wallet first, then fund a policy's escrow once."
+            : "Local development network. Its balances and policies are separate from testnet; the local node must be running."}
+        </p>
+        {targetNetwork.id === 296 ? <HederaPortalFaucet showIcon /> : <LocalFaucet />}
+      </div>
       <section>
         <h2 className="mb-3 text-xl font-semibold">Create a policy</h2>
         {isConnected ? (

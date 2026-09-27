@@ -41,6 +41,9 @@ const MIRROR_BASE: Record<HederaNetwork, string> = {
 /** `0.0.12345`, the only form the mirror node accepts in this path. */
 const TOPIC_ID = /^\d+\.\d+\.\d+$/;
 
+/** Year 9999. Anything later cannot be rendered as a Date. */
+const MAX_UNIX_SECONDS = 253_402_300_799;
+
 const KINDS: readonly EvidenceKind[] = ["policy_created", "triggered", "settled", "expired", "refunded"];
 
 /** A message as the mirror node returns it, plus what we made of it. */
@@ -114,6 +117,7 @@ export function parseEvidence(body: string): { record: EvidenceRecord } | { reas
   if (typeof parsed !== "object" || parsed === null) return { reason: "not an object" };
 
   const candidate = parsed as Record<string, unknown>;
+  if (candidate.v === undefined) return { reason: "Not a settlement evidence record (missing schema version)" };
   if (candidate.v !== 1) return { reason: `unknown schema version ${JSON.stringify(candidate.v)}` };
   if (typeof candidate.kind !== "string" || !KINDS.includes(candidate.kind as EvidenceKind)) {
     return { reason: `unknown kind ${JSON.stringify(candidate.kind)}` };
@@ -122,6 +126,28 @@ export function parseEvidence(body: string): { record: EvidenceRecord } | { reas
   if (!Number.isInteger(candidate.at)) return { reason: "at is not an integer" };
   if (typeof candidate.assetHash !== "string" || !/^0x[0-9a-fA-F]{64}$/.test(candidate.assetHash)) {
     return { reason: "assetHash is not a 32-byte hex hash" };
+  }
+
+  // The optional fields are rendered too, so they are checked too. Anyone can
+  // write to an open topic: an `observedAt` of 1e20 makes a date render throw,
+  // and an object in `price` crashes React, taking the whole page down with a
+  // single message.
+  if (candidate.price !== undefined && (typeof candidate.price !== "string" || !/^\d{1,78}$/.test(candidate.price))) {
+    return { reason: "price is not a non-negative integer string" };
+  }
+  if (
+    candidate.observedAt !== undefined &&
+    (!Number.isInteger(candidate.observedAt) ||
+      (candidate.observedAt as number) < 0 ||
+      (candidate.observedAt as number) > MAX_UNIX_SECONDS)
+  ) {
+    return { reason: "observedAt is not a unix timestamp" };
+  }
+  if (
+    candidate.txHash !== undefined &&
+    (typeof candidate.txHash !== "string" || !/^0x[0-9a-fA-F]{64}$/.test(candidate.txHash))
+  ) {
+    return { reason: "txHash is not a 32-byte hex hash" };
   }
 
   return { record: candidate as unknown as EvidenceRecord };

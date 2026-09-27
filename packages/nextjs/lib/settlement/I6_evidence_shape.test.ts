@@ -89,6 +89,19 @@ describe("I6 — what reaches a public topic", () => {
       expect(() => assertPublishable(tainted)).toThrow(/shaped like a secret/);
     });
 
+    it("rejects a 0x-prefixed key placed AFTER the legitimate assetHash", () => {
+      // Regression: the guard used to check only the first match per shape.
+      // assetHash always serialises first and is allowed, so a key after it
+      // was never looked at.
+      const tainted = { ...buildEvidence(base), reference: "0x" + "b".repeat(64) };
+      expect(() => assertPublishable(tainted)).toThrow(/shaped like a secret/);
+    });
+
+    it("does not treat an address in assetHash as a permitted hash", () => {
+      const tainted = { ...buildEvidence(base), assetHash: "0x" + "1".repeat(40) };
+      expect(() => assertPublishable(tainted)).toThrow(/shaped like a secret/);
+    });
+
     it("allows the two hashes that are supposed to be there", () => {
       // The guard must not be so blunt that it refuses the record's own
       // legitimate 32-byte fields.

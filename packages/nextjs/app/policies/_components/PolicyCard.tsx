@@ -1,13 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TransactionStatus, useTransactionStatus } from "./TransactionStatus";
 import { Address, HbarInput } from "@scaffold-hbar-ui/components";
 import { formatUnits, keccak256, toHex } from "viem";
 import { useAccount } from "wagmi";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-hbar";
 import { useTargetNetwork } from "~~/hooks/scaffold-hbar/useTargetNetwork";
 import { TESTNET_FEEDS } from "~~/lib/settlement/feeds";
+import { transactionProblem } from "~~/lib/settlement/transactionFeedback";
 import { contractAmountToHbar, hbarToTxValue } from "~~/lib/settlement/units";
+import type { AllowedChainIds } from "~~/utils/scaffold-hbar";
+import { getParsedErrorWithAllAbis } from "~~/utils/scaffold-hbar/contract";
+import { getBlockExplorerAddressLink } from "~~/utils/scaffold-hbar/networks";
 
 /** Mirrors PolicyRegistry.State. Index is the on-chain enum value. */
 const STATES = ["None", "Draft", "Active", "Triggered", "Settled", "Expired", "Refunded"] as const;
@@ -30,12 +35,29 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
   const [fundAmount, setFundAmount] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const transaction = useTransactionStatus(`policy:${policyId}`);
 
-  const { data: policy, refetch } = useScaffoldReadContract({
+  const {
+    data: policy,
+    refetch,
+    error: policyError,
+  } = useScaffoldReadContract({
     contractName: "PolicyRegistry",
     functionName: "getPolicy",
     args: [policyId],
     query: { refetchInterval: 10_000 },
+  });
+
+  const preview = useScaffoldReadContract({
+    contractName: "Settlement",
+    functionName: "preview",
+    args: [policyId],
+    watch: false,
+    query: {
+      enabled: Number(policy?.state) === 2 && Number(policy?.expiry) * 1000 > now,
+      refetchInterval: 15_000,
+      retry: false,
+    },
   });
 
   const { writeContractAsync: writeRegistry, isMining: registryMining } = useScaffoldWriteContract({
@@ -51,7 +73,24 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
     return () => clearInterval(timer);
   }, []);
 
-  if (!policy) return <div className="skeleton h-32 w-full" />;
+  useEffect(() => {
+    if (transaction.receipt.data) {
+      setProblem(null);
+      void refetch();
+    }
+  }, [transaction.receipt.data, refetch]);
+
+  if (!policy)
+    return policyError ? (
+      <div role="alert" className="alert">
+        Could not load policy #{policyId.toString()}.{" "}
+        <button className="btn btn-sm" onClick={() => void refetch()}>
+          Retry
+        </button>
+      </div>
+    ) : (
+      <div className="skeleton h-32 w-full" />
+    );
 
   // getPolicy returns a struct that abitype widens to `any` for these fields,
   // so `maxPayout - escrow` would come back a NUMBER and quietly lose
@@ -65,14 +104,18 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
   const isCreator = address?.toLowerCase() === policy.creator.toLowerCase();
   const deadline = new Date(Number(policy.expiry) * 1000);
   const pastDeadline = deadline.getTime() <= now;
-  const busy = registryMining || settlementMining;
+  const busy = registryMining || settlementMining || transaction.pending || !address;
+  const ready = !preview.error && !!preview.data?.[2];
+  const previewProblem = preview.error
+    ? transactionProblem(getParsedErrorWithAllAbis(preview.error, targetNetwork.id as AllowedChainIds))
+    : null;
 
   const run = async (fn: () => Promise<unknown>) => {
     setProblem(null);
     try {
       await fn();
     } catch (caught) {
-      setProblem(caught instanceof Error ? caught.message.split("\n")[0] : String(caught));
+      setProblem(transactionProblem(getParsedErrorWithAllAbis(caught, targetNetwork.id as AllowedChainIds)));
     } finally {
       // Refetch whether it succeeded or not: a revert still means the local
       // view may be stale relative to why it reverted.
@@ -103,7 +146,13 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
       <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
         <dt className="text-base-content/60">beneficiary</dt>
         <dd>
-          <Address address={policy.beneficiary} size="xs" />
+          <Address
+            address={policy.beneficiary}
+            size="xs"
+            chain={targetNetwork}
+            style={{ color: "var(--color-base-content)" }}
+            blockExplorerAddressLink={getBlockExplorerAddressLink(targetNetwork, policy.beneficiary)}
+          />
         </dd>
         <dt className="text-base-content/60">escrow held</dt>
         <dd className="font-mono">{contractAmountToHbar(escrow, targetNetwork.id)} HBAR</dd>
@@ -128,7 +177,7 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
           Showing a disabled Settle button on a refunded policy invites the
           question "why can't I", which the state already answers. */}
       <div className="mt-4 flex flex-wrap items-end gap-3">
-        {(state === "Draft" || state === "Active") && !pastDeadline && (
+        {state === "Draft" && !pastDeadline && (
           <div className="flex items-end gap-2">
             <label className="form-control">
               <span className="label-text mb-1 text-xs">Fund escrow</span>
@@ -136,18 +185,21 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
             </label>
             <button
               className="btn btn-primary btn-sm"
-              disabled={busy || !fundAmount}
+              disabled={busy || !fundAmount || Number(fundAmount) <= 0}
               onClick={() =>
                 run(() =>
-                  writeRegistry({
-                    functionName: "fund",
-                    args: [policyId],
-                    // A transaction's value field is ALWAYS 18dp, even on
-                    // Hedera where the contract will read it as 8dp. This is
-                    // the other half of the pair — the amount above is
-                    // converted with contractAmountToHbar. See units.ts.
-                    value: hbarToTxValue(fundAmount),
-                  }),
+                  writeRegistry(
+                    {
+                      functionName: "fund",
+                      args: [policyId],
+                      // A transaction's value field is ALWAYS 18dp, even on
+                      // Hedera where the contract will read it as 8dp. This is
+                      // the other half of the pair — the amount above is
+                      // converted with contractAmountToHbar. See units.ts.
+                      value: hbarToTxValue(fundAmount),
+                    },
+                    { onSubmitted: transaction.onSubmitted },
+                  ),
                 )
               }
             >
@@ -159,8 +211,19 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
         {state === "Active" && !pastDeadline && (
           <button
             className="btn btn-secondary btn-sm"
-            disabled={busy}
-            onClick={() => run(() => writeSettlement({ functionName: "trigger", args: [policyId] }))}
+            disabled={busy || !ready || preview.isFetching}
+            onClick={() =>
+              run(() =>
+                writeSettlement(
+                  {
+                    functionName: "trigger",
+                    args: [policyId],
+                    ...(targetNetwork.id === 296 ? { gas: 3_000_000n } : {}),
+                  },
+                  { onSubmitted: transaction.onSubmitted },
+                ),
+              )
+            }
           >
             Settle now
           </button>
@@ -170,7 +233,11 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
           <button
             className="btn btn-outline btn-sm"
             disabled={busy}
-            onClick={() => run(() => writeRegistry({ functionName: "expire", args: [policyId] }))}
+            onClick={() =>
+              run(() =>
+                writeRegistry({ functionName: "expire", args: [policyId] }, { onSubmitted: transaction.onSubmitted }),
+              )
+            }
           >
             Expire
           </button>
@@ -180,7 +247,11 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
           <button
             className="btn btn-outline btn-sm"
             disabled={busy}
-            onClick={() => run(() => writeRegistry({ functionName: "refund", args: [policyId] }))}
+            onClick={() =>
+              run(() =>
+                writeRegistry({ functionName: "refund", args: [policyId] }, { onSubmitted: transaction.onSubmitted }),
+              )
+            }
           >
             Take refund
           </button>
@@ -190,6 +261,30 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
           <p className="text-sm text-base-content/60">Expired. Only the creator can take the refund.</p>
         )}
       </div>
+
+      <TransactionStatus status={transaction} />
+      {state === "Active" && <p className="mt-3 text-sm text-success">Fully funded. No further deposit is needed.</p>}
+      {state === "Active" && escrow > maxPayout && (
+        <p className="text-sm">
+          The extra {contractAmountToHbar(escrow - maxPayout, targetNetwork.id)} HBAR returns to the creator when this
+          policy settles. If it expires, the creator can reclaim the full escrow.
+        </p>
+      )}
+      {state === "Active" && !pastDeadline && (
+        <div className="mt-3 text-sm">
+          <p>
+            {previewProblem ??
+              (preview.data
+                ? ready
+                  ? `Ready to settle at $${formatUnits(preview.data[0], 18)}.`
+                  : `Waiting for the threshold. Latest price: $${formatUnits(preview.data[0], 18)}.`
+                : "Checking the price feed...")}
+          </p>
+          <button className="btn btn-ghost btn-xs" disabled={preview.isFetching} onClick={() => void preview.refetch()}>
+            Refresh price check
+          </button>
+        </div>
+      )}
 
       {problem && (
         <p role="alert" className="mt-3 text-sm text-error">

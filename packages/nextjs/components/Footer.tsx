@@ -1,6 +1,6 @@
 import React from "react";
 import { HederaPortalFaucet } from "@scaffold-hbar-ui/components";
-import { hedera } from "viem/chains";
+import { hederaTestnet } from "viem/chains";
 import { CurrencyDollarIcon } from "@heroicons/react/24/outline";
 import { SwitchTheme } from "~~/components/SwitchTheme";
 import { useFetchHbarPrice } from "~~/hooks/scaffold-hbar";
@@ -11,7 +11,7 @@ import { useTargetNetwork } from "~~/hooks/scaffold-hbar/useTargetNetwork";
  */
 export const Footer = () => {
   const { targetNetwork } = useTargetNetwork();
-  const isTestnet = targetNetwork.id !== hedera.id;
+  const isTestnet = targetNetwork.id === hederaTestnet.id;
   const { price: nativeCurrencyPrice } = useFetchHbarPrice();
 
   return (
@@ -36,7 +36,7 @@ export const Footer = () => {
         <ul className="menu menu-horizontal w-full">
           <div className="flex justify-center items-center gap-3 text-sm w-full text-base-content/60">
             <a
-              href="https://github.com/hedera-dev/scaffold-hbar"
+              href="https://github.com/da-b0s/conditional-settlement-kit"
               target="_blank"
               rel="noreferrer"
               className="link hover:text-primary"

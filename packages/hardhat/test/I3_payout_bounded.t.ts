@@ -77,18 +77,78 @@ describe("I3 — payout never exceeds escrow", () => {
     const creatorBefore = await ethers.provider.getBalance(d.creator.address);
 
     // Triggered by a third party so gas does not muddy either balance.
-    await d.settlement.connect(d.stranger).trigger(policyId);
+    await expect(d.settlement.connect(d.stranger).trigger(policyId))
+      .to.emit(d.registry, "SurplusCredited")
+      .withArgs(policyId, d.creator.address, ethers.parseEther("2"));
 
     expect((await ethers.provider.getBalance(d.beneficiary.address)) - beneficiaryBefore).to.equal(
       ethers.parseEther("1"),
     );
-    // The surplus goes back to the creator, who funded this policy.
-    expect((await ethers.provider.getBalance(d.creator.address)) - creatorBefore).to.equal(ethers.parseEther("2"));
+    // The surplus is credited to the creator, not pushed: nothing arrives yet.
+    expect(await ethers.provider.getBalance(d.creator.address)).to.equal(creatorBefore);
+    expect(await d.registry.withdrawable(d.creator.address)).to.equal(ethers.parseEther("2"));
+
+    // The creator claims it in a separate call.
+    const receipt = await (await d.registry.connect(d.creator).withdraw()).wait();
+    const gas = receipt!.gasUsed * receipt!.gasPrice;
+    expect((await ethers.provider.getBalance(d.creator.address)) - creatorBefore + gas).to.equal(
+      ethers.parseEther("2"),
+    );
+    expect(await d.registry.withdrawable(d.creator.address)).to.equal(0n);
+    expect(await d.registry.totalWithdrawable()).to.equal(0n);
+  });
+
+  it("withdrawing with no balance reverts rather than succeeding silently", async () => {
+    await expect(d.registry.connect(d.stranger).withdraw()).to.be.revertedWithCustomError(
+      d.registry,
+      "NothingToWithdraw",
+    );
+  });
+
+  it("a creator that refuses HBAR cannot block the beneficiary's payout", async () => {
+    // The attack this closes: overfund by a little, refuse the surplus so
+    // settle() reverts, wait out the deadline, refund the lot.
+    const griefer = await ethers.deployContract("RejectingCreator", [await d.registry.getAddress()]);
+    const expiry = (await chainNow()) + 86_400;
+    const policyId = await griefer.createAndFund.staticCall(
+      d.beneficiary.address,
+      HBAR_USD,
+      at18("0.08"),
+      true,
+      ethers.parseEther("1"),
+      expiry,
+      { value: ethers.parseEther("1") + 1n },
+    );
+    await griefer.createAndFund(d.beneficiary.address, HBAR_USD, at18("0.08"), true, ethers.parseEther("1"), expiry, {
+      value: ethers.parseEther("1") + 1n,
+    });
+    await griefer.setRejecting(true);
+
+    const beneficiaryBefore = await ethers.provider.getBalance(d.beneficiary.address);
+    await d.settlement.connect(d.stranger).trigger(policyId);
+
+    expect(await d.registry.stateOf(policyId)).to.equal(State.Settled);
+    expect((await ethers.provider.getBalance(d.beneficiary.address)) - beneficiaryBefore).to.equal(
+      ethers.parseEther("1"),
+    );
+    // The surplus waits for the creator; refusing it only hurts the creator.
+    expect(await d.registry.withdrawable(await griefer.getAddress())).to.equal(1n);
+    await expect(griefer.withdraw()).to.be.revertedWithCustomError(d.registry, "TransferFailed");
+    await griefer.setRejecting(false);
+    await griefer.withdraw();
+    expect(await d.registry.withdrawable(await griefer.getAddress())).to.equal(0n);
   });
 
   it("the registry never holds less than it owes", async () => {
     const a = await createFundedPolicy(d, { escrow: ethers.parseEther("1"), payout: ethers.parseEther("1") });
     const b = await createFundedPolicy(d, { escrow: ethers.parseEther("2"), payout: ethers.parseEther("2") });
+    // Surplus becomes a withdrawable balance, which the registry must still hold.
+    const c = await createFundedPolicy(d, { escrow: ethers.parseEther("3"), payout: ethers.parseEther("1") });
+    await d.settlement.trigger(c);
+    expect(await d.registry.totalWithdrawable()).to.equal(ethers.parseEther("2"));
+    expect(await ethers.provider.getBalance(await d.registry.getAddress())).to.be.greaterThanOrEqual(
+      (await d.registry.totalEscrowed()) + (await d.registry.totalWithdrawable()),
+    );
 
     const owed = await d.registry.totalEscrowed();
     const held = await ethers.provider.getBalance(await d.registry.getAddress());
@@ -103,6 +163,10 @@ describe("I3 — payout never exceeds escrow", () => {
 
     await d.settlement.trigger(b);
     expect(await d.registry.totalEscrowed()).to.equal(0n);
+    // The unclaimed surplus is still fully held.
+    expect(await ethers.provider.getBalance(await d.registry.getAddress())).to.be.greaterThanOrEqual(
+      await d.registry.totalWithdrawable(),
+    );
   });
 
   it("rejects a partial first deposit and activates only on a fully funded deposit", async () => {
@@ -148,7 +212,9 @@ describe("I3 — payout never exceeds escrow", () => {
     await d.settlement.connect(d.stranger).trigger(policyId);
 
     expect(await d.registry.stateOf(policyId)).to.equal(State.Settled);
-    expect((await ethers.provider.getBalance(d.creator.address)) - creatorBefore).to.equal(ethers.parseEther("1"));
+    // Nothing is stranded: the whole escrow is the creator's to withdraw.
+    expect(await ethers.provider.getBalance(d.creator.address)).to.equal(creatorBefore);
+    expect(await d.registry.withdrawable(d.creator.address)).to.equal(ethers.parseEther("1"));
     expect(await d.registry.totalEscrowed()).to.equal(0n);
   });
 
@@ -316,9 +382,12 @@ describe("Funding window", () => {
       if (outcome === "settle") {
         await expect(d.settlement.connect(d.stranger).trigger(id)).to.changeEtherBalances(
           [d.beneficiary, d.creator],
-          [deposit, deposit],
+          [deposit, 0n],
         );
-        expect(await ethers.provider.getBalance(d.creator.address)).to.equal(creatorBefore + deposit);
+        // The top-up is credited to the creator and claimed with withdraw().
+        expect(await ethers.provider.getBalance(d.creator.address)).to.equal(creatorBefore);
+        expect(await d.registry.withdrawable(d.creator.address)).to.equal(deposit);
+        await expect(d.registry.connect(d.creator).withdraw()).to.changeEtherBalance(d.creator, deposit);
       } else {
         await ethers.provider.send("evm_setNextBlockTimestamp", [Number((await d.registry.getPolicy(id)).expiry)]);
         await d.registry.connect(d.stranger).expire(id);

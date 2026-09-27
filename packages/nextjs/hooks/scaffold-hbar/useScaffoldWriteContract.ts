@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MutateOptions } from "@tanstack/react-query";
 import { Abi, ExtractAbiFunctionNames } from "abitype";
+import { encodeFunctionData } from "viem";
 import { Config, UseWriteContractParameters, useAccount, useConfig, useWriteContract } from "wagmi";
-import { WriteContractErrorType, WriteContractReturnType } from "wagmi/actions";
+import { WriteContractErrorType, WriteContractReturnType, getWalletClient, getPublicClient } from "wagmi/actions";
 import { WriteContractVariables } from "wagmi/query";
 import { useSelectedNetwork } from "~~/hooks/scaffold-hbar";
 import { useDeployedContractInfo, useTransactor } from "~~/hooks/scaffold-hbar";
 import { AllowedChainIds, notification } from "~~/utils/scaffold-hbar";
+import { submitEvmTransaction } from "~~/lib/walletSubmission";
 import {
   ContractAbi,
   ContractName,
@@ -74,6 +76,7 @@ export function useScaffoldWriteContract<TContractName extends ContractName>(
   const { chain: accountChain } = useAccount();
   const writeTx = useTransactor();
   const [isMining, setIsMining] = useState(false);
+  const submitting = useRef(false);
 
   const wagmiContractWrite = useWriteContract(finalWriteContractParams);
 
@@ -90,31 +93,34 @@ export function useScaffoldWriteContract<TContractName extends ContractName>(
     variables: ScaffoldWriteContractVariables<TContractName, TFunctionName>,
     options?: ScaffoldWriteContractOptions,
   ) => {
+    if (submitting.current) throw new Error("A transaction is already awaiting confirmation.");
     if (!deployedContractData) {
       notification.error(
         "Target Contract is not deployed. Deploy your contracts first with `yarn hardhat:deploy` or `yarn foundry:deploy`.",
       );
-      return;
+      throw new Error("The contract is not available on this network.");
     }
 
     if (!accountChain?.id) {
       notification.error("Please connect your wallet");
-      return;
+      throw new Error("Please connect your wallet.");
     }
 
     if (accountChain?.id !== selectedNetwork.id) {
       notification.error(`Wallet is connected to the wrong network. Please switch to ${selectedNetwork.name}`);
-      return;
+      throw new Error(`Please switch to ${selectedNetwork.name}.`);
     }
 
     try {
+      submitting.current = true;
       setIsMining(true);
-      const { blockConfirmations, onBlockConfirmation, ...mutateOptions } = options || {};
+      const { blockConfirmations, onBlockConfirmation, onSubmitted, ...mutateOptions } = options || {};
 
       const writeContractObject = {
         abi: deployedContractData.abi as Abi,
         address: deployedContractData.address,
         ...variables,
+        chainId: selectedNetwork.id,
       } as WriteContractVariables<Abi, string, any[], Config, number>;
 
       if (!finalConfig?.disableSimulate) {
@@ -125,8 +131,21 @@ export function useScaffoldWriteContract<TContractName extends ContractName>(
         });
       }
 
-      const makeWriteWithParams = () =>
-        wagmiContractWrite.writeContractAsync(
+      const makeWriteWithParams = async () => {
+        const client = await getWalletClient(wagmiConfig, { chainId: selectedNetwork.id });
+        if (selectedNetwork.id === 296 && client.account.type === "json-rpc") {
+          if (await client.getChainId() !== selectedNetwork.id) throw new Error("Wallet network changed. Reconnect on Hedera Testnet.");
+          const publicClient = getPublicClient(wagmiConfig, { chainId: selectedNetwork.id });
+          if (!publicClient) throw new Error("Network connection unavailable.");
+          const data = encodeFunctionData({ abi: deployedContractData.abi, functionName: variables.functionName, args: variables.args } as any);
+          // Estimate through the public RPC, not through HashPack's signing provider.
+          const estimate = variables.gas ?? await publicClient.estimateGas({ account: client.account.address, to: deployedContractData.address, data, value: variables.value });
+          return submitEvmTransaction(args => client.request(args), {
+            from: client.account.address, to: deployedContractData.address, data,
+            value: variables.value, gas: variables.gas ?? (estimate * 120n / 100n),
+          });
+        }
+        return wagmiContractWrite.writeContractAsync(
           writeContractObject,
           mutateOptions as
             | MutateOptions<
@@ -137,12 +156,14 @@ export function useScaffoldWriteContract<TContractName extends ContractName>(
               >
             | undefined,
         );
-      const writeTxResult = await writeTx(makeWriteWithParams, { blockConfirmations, onBlockConfirmation });
+      };
+      const writeTxResult = await writeTx(makeWriteWithParams, { blockConfirmations, onBlockConfirmation, onSubmitted });
 
       return writeTxResult;
     } catch (e: any) {
       throw e;
     } finally {
+      submitting.current = false;
       setIsMining(false);
     }
   };
@@ -175,6 +196,7 @@ export function useScaffoldWriteContract<TContractName extends ContractName>(
         abi: deployedContractData.abi as Abi,
         address: deployedContractData.address,
         ...variables,
+        chainId: selectedNetwork.id,
       } as WriteContractVariables<Abi, string, any[], Config, number>,
       options as
         | MutateOptions<

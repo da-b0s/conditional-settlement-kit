@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TransactionStatus, useTransactionStatus } from "./TransactionStatus";
 import { HbarInput, HederaAddressInput } from "@scaffold-hbar-ui/components";
 import type { Address } from "viem";
 import { keccak256, parseUnits, toHex } from "viem";
@@ -8,7 +9,10 @@ import { useAccount } from "wagmi";
 import { useScaffoldWriteContract } from "~~/hooks/scaffold-hbar";
 import { useTargetNetwork } from "~~/hooks/scaffold-hbar/useTargetNetwork";
 import { TESTNET_FEEDS } from "~~/lib/settlement/feeds";
+import { transactionProblem } from "~~/lib/settlement/transactionFeedback";
 import { hbarToContractAmount } from "~~/lib/settlement/units";
+import type { AllowedChainIds } from "~~/utils/scaffold-hbar";
+import { getParsedErrorWithAllAbis } from "~~/utils/scaffold-hbar/contract";
 
 /** The asset key the contracts use: keccak256 of the pair name. */
 const assetKey = (pair: string) => keccak256(toHex(pair));
@@ -25,6 +29,7 @@ const defaultExpiry = () => {
 export const PolicyForm = ({ onCreated }: { onCreated: () => void }) => {
   const { address } = useAccount();
   const { targetNetwork } = useTargetNetwork();
+  const transaction = useTransactionStatus("create-policy");
   // HederaAddressInput keeps whatever was typed — `0.0.n` or `0x…` — in
   // `value`, and reports the RESOLVED EVM address separately. The contract
   // needs the resolved one; passing the raw text would send a Hedera id where
@@ -42,6 +47,7 @@ export const PolicyForm = ({ onCreated }: { onCreated: () => void }) => {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (isMining || transaction.pending) return;
     setProblem(null);
 
     // Validate here rather than letting the contract revert. A revert costs
@@ -62,32 +68,35 @@ export const PolicyForm = ({ onCreated }: { onCreated: () => void }) => {
     if (!maxPayout || Number(maxPayout) <= 0) return setProblem("Set a payout above zero.");
 
     try {
-      await writeContractAsync({
-        functionName: "createPolicy",
-        args: [
-          beneficiary,
-          assetKey(pair),
-          // Thresholds are compared against a price normalised to 18dp, not
-          // against the feed's native 8dp. Parsing at 8 here would be off by
-          // ten billion, which is the same shape of mistake as tinybar for
-          // weibar and just as invisible.
-          parseUnits(threshold, 18),
-          triggerAbove,
-          // NOT parseEther. maxPayout is compared against msg.value inside
-          // the contract, and msg.value on Hedera is TINYBAR (8dp) while a
-          // transaction's value field is weibar (18dp). parseEther here
-          // overstates the promise by 10^10 and the policy can never
-          // activate. See lib/settlement/units.ts.
-          hbarToContractAmount(maxPayout, targetNetwork.id),
-          BigInt(expirySeconds),
-        ],
-      });
+      await writeContractAsync(
+        {
+          functionName: "createPolicy",
+          args: [
+            beneficiary,
+            assetKey(pair),
+            // Thresholds are compared against a price normalised to 18dp, not
+            // against the feed's native 8dp. Parsing at 8 here would be off by
+            // ten billion, which is the same shape of mistake as tinybar for
+            // weibar and just as invisible.
+            parseUnits(threshold, 18),
+            triggerAbove,
+            // NOT parseEther. maxPayout is compared against msg.value inside
+            // the contract, and msg.value on Hedera is TINYBAR (8dp) while a
+            // transaction's value field is weibar (18dp). parseEther here
+            // overstates the promise by 10^10 and the policy can never
+            // activate. See lib/settlement/units.ts.
+            hbarToContractAmount(maxPayout, targetNetwork.id),
+            BigInt(expirySeconds),
+          ],
+        },
+        { onSubmitted: transaction.onSubmitted },
+      );
       onCreated();
       setThreshold("");
     } catch (caught) {
       // useScaffoldWriteContract already surfaces a toast; this keeps the
       // reason next to the form the user is looking at.
-      setProblem(caught instanceof Error ? caught.message.split("\n")[0] : String(caught));
+      setProblem(transactionProblem(getParsedErrorWithAllAbis(caught, targetNetwork.id as AllowedChainIds)));
     }
   };
 
@@ -97,6 +106,7 @@ export const PolicyForm = ({ onCreated }: { onCreated: () => void }) => {
         <label className="form-control">
           <span className="label-text mb-1">Beneficiary</span>
           <HederaAddressInput
+            chainId={targetNetwork.id}
             value={beneficiaryText}
             onChange={setBeneficiaryText}
             onResolvedEvmChange={setBeneficiary}
@@ -197,7 +207,7 @@ export const PolicyForm = ({ onCreated }: { onCreated: () => void }) => {
       )}
 
       <div className="flex items-center gap-3">
-        <button type="submit" className="btn btn-primary" disabled={isMining}>
+        <button type="submit" className="btn btn-primary" disabled={isMining || transaction.pending}>
           {isMining && <span className="loading loading-spinner loading-xs" />}
           Create policy
         </button>
@@ -205,6 +215,7 @@ export const PolicyForm = ({ onCreated }: { onCreated: () => void }) => {
           Creating costs gas but escrows nothing. Funding is the next step.
         </span>
       </div>
+      <TransactionStatus status={transaction} />
     </form>
   );
 };

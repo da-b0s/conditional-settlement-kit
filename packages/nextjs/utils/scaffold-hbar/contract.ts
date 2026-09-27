@@ -214,6 +214,7 @@ export type ScaffoldWriteContractVariables<
 type WriteVariables = WriteContractVariables<Abi, string, any[], Config, number>;
 
 export type TransactorFuncOptions = {
+  onSubmitted?: (hash: `0x${string}`) => void;
   onBlockConfirmation?: (txnReceipt: TransactionReceipt) => void;
   blockConfirmations?: number;
 };
@@ -415,7 +416,7 @@ export const simulateContractWriteAndNotifyError = async ({
   chainId: AllowedChainIds;
 }) => {
   try {
-    await simulateContract(wagmiConfig, params);
+    await simulateContract(wagmiConfig, { ...params, chainId });
   } catch (error) {
     const parsedError = getParsedErrorWithAllAbis(error, chainId);
 

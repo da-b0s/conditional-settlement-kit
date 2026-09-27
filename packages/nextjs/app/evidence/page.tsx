@@ -1,4 +1,5 @@
 import Form from "next/form";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { ExclamationTriangleIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import { ReadEvidenceButton } from "~~/components/ReadEvidenceButton";
@@ -58,9 +59,9 @@ export default async function EvidencePage({ searchParams }: { searchParams: Pro
       <header className="mb-6">
         <h1 className="text-3xl font-bold">Evidence trail</h1>
         <p className="mt-2 max-w-2xl text-base-content/70">
-          Every state change this kit makes is written to a Hedera consensus topic. Reading one back takes an HTTP
-          request and nothing else — no wallet, no key, no permission. That is the point of putting it there: the person
-          who most needs to audit a settlement is the counterparty, who has access to none of your systems.
+          This page reads evidence published to Hedera Testnet by an operator. Creating, funding or settling a policy
+          does not automatically publish a message here. Anyone can read published records without a wallet. Compare the
+          records with the contract transactions; a valid record format alone does not prove a claim.
         </p>
       </header>
 
@@ -108,6 +109,13 @@ export default async function EvidencePage({ searchParams }: { searchParams: Pro
         </div>
       )}
 
+      {topic && process.env.NEXT_PUBLIC_EVIDENCE_TOPIC && topic !== process.env.NEXT_PUBLIC_EVIDENCE_TOPIC && (
+        <p className="mt-4 text-sm">
+          <Link className="link text-primary" href="/evidence">
+            Read this project&apos;s evidence topic
+          </Link>
+        </p>
+      )}
       {trail && <Trail trail={trail} />}
     </div>
   );
@@ -155,8 +163,9 @@ function Trail({ trail }: { trail: EvidenceTrail }) {
             {trail.unreadable > 0 && (
               <p>
                 <span className="font-semibold">{trail.unreadable}</span> of {trail.entries.length} message
-                {trail.entries.length === 1 ? "" : "s"} could not be read as evidence. They are counted below rather
-                than filtered out — a trail that hides what it could not parse is not an audit.
+                {trail.entries.length === 1 ? "" : "s"} do not match this kit&apos;s evidence format. The topic may
+                belong to another application, or contain malformed or unsupported records. Sample messages are
+                available below; these messages are still counted.
               </p>
             )}
             {trail.gaps.length > 0 && (

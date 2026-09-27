@@ -154,14 +154,23 @@ export function assertPublishable(record: unknown): asserts record is EvidenceRe
     }
   }
 
+  // The only values allowed to look like a 32-byte hash, by design.
+  const permitted = new Set<string>();
+  if (typeof record === "object" && record !== null) {
+    for (const field of ["assetHash", "txHash"] as const) {
+      const value = (record as Record<string, unknown>)[field];
+      if (typeof value === "string" && /^0x[0-9a-fA-F]{64}$/.test(value)) permitted.add(value);
+    }
+  }
+
   for (const shape of SECRET_SHAPES) {
-    const hit = json.match(shape);
-    if (!hit) continue;
-    // assetHash and txHash are 32-byte hashes by design; everything else
-    // matching that shape is unaccounted for.
-    const allowed = new RegExp(`"(assetHash|txHash)"\\s*:\\s*"${hit[0]}"`).test(json);
-    if (!allowed) {
-      throw new EvidenceRejected(`evidence contains something shaped like a secret or an identifier: ${hit[0]}`);
+    // EVERY hit, not the first. assetHash is always serialised before any
+    // extra field, so checking only the first match let a key placed after
+    // it through on the strength of assetHash being allowed.
+    for (const hit of json.matchAll(new RegExp(shape.source, "g"))) {
+      if (!permitted.has(hit[0])) {
+        throw new EvidenceRejected(`evidence contains something shaped like a secret or an identifier: ${hit[0]}`);
+      }
     }
   }
 }

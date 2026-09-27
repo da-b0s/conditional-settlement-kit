@@ -189,9 +189,23 @@ describe("parsing one message", () => {
   it.each([
     ["not JSON", "{oops"],
     ["not an object", "42"],
+    ["Not a settlement evidence record (missing schema version)", JSON.stringify({ location: { lat: 49.9 } })],
     ["unknown schema version 2", JSON.stringify({ v: 2, kind: "settled", policyId: 1, at: 1, assetHash: ASSET })],
     ['unknown kind "exploded"', JSON.stringify({ v: 1, kind: "exploded", policyId: 1, at: 1, assetHash: ASSET })],
     ["policyId is not an integer", JSON.stringify({ v: 1, kind: "settled", policyId: "1", at: 1, assetHash: ASSET })],
+    // Rendered fields from an untrusted writer: each of these used to crash the page.
+    [
+      "observedAt is not a unix timestamp",
+      JSON.stringify({ v: 1, kind: "settled", policyId: 1, at: 1, assetHash: ASSET, observedAt: 1e20 }),
+    ],
+    [
+      "price is not a non-negative integer string",
+      JSON.stringify({ v: 1, kind: "settled", policyId: 1, at: 1, assetHash: ASSET, price: { x: 1 } }),
+    ],
+    [
+      "txHash is not a 32-byte hex hash",
+      JSON.stringify({ v: 1, kind: "settled", policyId: 1, at: 1, assetHash: ASSET, txHash: ["0x"] }),
+    ],
     [
       "assetHash is not a 32-byte hex hash",
       JSON.stringify({ v: 1, kind: "settled", policyId: 1, at: 1, assetHash: "HBAR/USD" }),

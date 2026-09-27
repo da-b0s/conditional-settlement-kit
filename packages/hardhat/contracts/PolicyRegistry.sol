@@ -63,6 +63,16 @@ contract PolicyRegistry {
     ///      alone would be fooled by a forced send.
     uint256 public totalEscrowed;
 
+    /// @notice Surplus escrow credited to creators at settlement, claimed with withdraw().
+    /// @dev Pull, not push. Sending the surplus inside settle() let a creator
+    ///      that refuses HBAR (a reverting receive(), or a Hedera account
+    ///      requiring a receiver signature) revert every settlement, run the
+    ///      clock out and refund the whole escrow. The beneficiary's payout
+    ///      must never depend on the creator being able to receive.
+    mapping(address => uint256) public withdrawable;
+    /// @notice Sum of every withdrawable balance. Held alongside totalEscrowed.
+    uint256 public totalWithdrawable;
+
     event PolicyCreated(
         uint256 indexed policyId,
         address indexed creator,
@@ -78,6 +88,8 @@ contract PolicyRegistry {
     event PolicySettled(uint256 indexed policyId, address indexed beneficiary, uint256 amount);
     event PolicyExpired(uint256 indexed policyId);
     event PolicyRefunded(uint256 indexed policyId, address indexed creator, uint256 amount);
+    event SurplusCredited(uint256 indexed policyId, address indexed creator, uint256 amount);
+    event Withdrawn(address indexed account, uint256 amount);
     event SettlementChanged(address indexed from, address indexed to);
     event OwnerChanged(address indexed from, address indexed to);
 
@@ -95,6 +107,7 @@ contract PolicyRegistry {
     error NothingToFund();
     error FundingNotAllowed(uint256 policyId, State state);
     error TransferFailed(address to, uint256 amount);
+    error NothingToWithdraw();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotOwner();
@@ -231,22 +244,34 @@ contract PolicyRegistry {
 
         // I3: never more than is held, even if maxPayout were somehow larger.
         amount = p.maxPayout > p.escrow ? p.escrow : p.maxPayout;
+        uint256 remainder = p.escrow - amount;
 
         // Effects before interaction.
-        p.escrow -= amount;
-        totalEscrowed -= amount;
+        p.escrow = 0;
+        totalEscrowed -= amount + remainder;
 
-        uint256 remainder = p.escrow;
+        // Anything over the payout is credited to the creator, not sent. See
+        // `withdrawable` for why pushing it here was a way to block payment.
         if (remainder > 0) {
-            p.escrow = 0;
-            totalEscrowed -= remainder;
+            withdrawable[p.creator] += remainder;
+            totalWithdrawable += remainder;
+            emit SurplusCredited(policyId, p.creator, remainder);
         }
 
         emit PolicySettled(policyId, p.beneficiary, amount);
-
         _send(p.beneficiary, amount);
-        // Anything over the payout goes back to whoever funded it.
-        if (remainder > 0) _send(p.creator, remainder);
+    }
+
+    /// @notice Claim surplus escrow credited by settle(). Anyone with a balance.
+    function withdraw() external returns (uint256 amount) {
+        amount = withdrawable[msg.sender];
+        if (amount == 0) revert NothingToWithdraw();
+
+        withdrawable[msg.sender] = 0;
+        totalWithdrawable -= amount;
+
+        emit Withdrawn(msg.sender, amount);
+        _send(msg.sender, amount);
     }
 
     /// @notice Move a policy to Expired once its deadline has passed.

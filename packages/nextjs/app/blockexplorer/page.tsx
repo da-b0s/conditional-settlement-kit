@@ -6,12 +6,15 @@ import { PaginationButton, SearchBar, TransactionsTable } from "./_components";
 import type { NextPage } from "next";
 import { Block, Transaction, TransactionReceipt } from "viem";
 import { hardhat } from "viem/chains";
+import { useAccount } from "wagmi";
 import { useFetchBlocks } from "~~/hooks/scaffold-hbar";
 import { useTargetNetwork } from "~~/hooks/scaffold-hbar/useTargetNetwork";
 import { notification } from "~~/utils/scaffold-hbar";
 import { useAllContracts } from "~~/utils/scaffold-hbar/contractsData";
+import { getExplorerLink } from "~~/utils/scaffold-hbar/networks";
 
 const BlockExplorer: NextPage = () => {
+  const { address } = useAccount();
   const { targetNetwork } = useTargetNetwork();
   const isLocalNetwork = targetNetwork.id === hardhat.id;
   const { blocks, transactionReceipts, currentPage, totalBlocks, setCurrentPage, error } =
@@ -72,28 +75,16 @@ const BlockExplorer: NextPage = () => {
       <div className="container mx-auto my-10">
         <div className="flex justify-center p-8">
           <div className="max-w-xl text-center text-base-content/80">
-            <p className="font-bold mb-2">
-              <code className="italic bg-base-300 text-base font-bold">targetNetwork</code> is not localhost
-            </p>
-            <p className="mb-2">
-              You are on <code className="italic bg-base-300 text-base font-bold">{targetNetwork.name}</code>. This
-              block explorer is only for <code className="italic bg-base-300 text-base font-bold">localhost</code>.
-            </p>
-            {targetNetwork.blockExplorers?.default && (
-              <p className="mb-0">
-                Hedera is indexed by the mirror node, and{" "}
-                <a
-                  className="text-primary underline"
-                  href={targetNetwork.blockExplorers.default.url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {targetNetwork.blockExplorers.default.name}
-                </a>{" "}
-                is its explorer. This page cannot replace it: the scaffold explorer indexes a local chain by reading
-                blocks over RPC, and there is no local chain here.
-              </p>
-            )}
+            <h1 className="text-2xl font-bold">Explore {targetNetwork.name}</h1>
+            <p>View confirmed transactions, account activity and deployed contracts on HashScan.</p>
+            <a
+              className="btn btn-primary"
+              href={getExplorerLink(targetNetwork, address)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {address ? "View wallet transactions" : "Open HashScan"}
+            </a>
           </div>
         </div>
 
@@ -114,7 +105,7 @@ const BlockExplorer: NextPage = () => {
                   <li key={name} className="flex flex-wrap items-baseline gap-2">
                     <a
                       className="link link-hover font-mono text-primary"
-                      href={`https://hashscan.io/testnet/contract/${contract.address}`}
+                      href={`${targetNetwork.blockExplorers?.default?.url}/contract/${contract.address}`}
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -129,8 +120,8 @@ const BlockExplorer: NextPage = () => {
             <div>
               <h3 className="text-sm font-semibold mb-1.5">The evidence trail</h3>
               <p className="text-xs opacity-60 mb-2">
-                Every state change this kit makes is written to a public consensus topic. Reading it back needs no key
-                and no permission — that is the point of putting it there.
+                Evidence is published separately by an operator to a public testnet topic. Read published records
+                without connecting a wallet; they are not an automatic log of every transaction.
               </p>
               <Link href="/evidence" className="link link-hover text-sm text-primary">
                 Open the evidence reader →

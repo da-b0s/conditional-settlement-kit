@@ -131,8 +131,12 @@ Before adapting the template, understand these limits:
   or Active policy at or past its deadline rejects them with `AlreadyExpired`.
   Valid Active top-ups are still allowed. Excess funds and refunds go to the
   creator, not necessarily the funder.
-- A recipient rejecting payment can revert settlement/refund. Execution still
-  depends on fees, oracle data and network availability.
+- Surplus escrow at settlement is credited to the creator and claimed with
+  `withdraw()`, not sent inside `settle()`. A creator that refuses HBAR
+  therefore cannot block the beneficiary's payout. A beneficiary that refuses
+  HBAR can still revert its own settlement, and a creator that refuses it
+  cannot take a refund. Execution still depends on fees, oracle data and
+  network availability.
 - Reverted transactions roll back their events. Legacy source comments saying
   `TriggerAccepted` survives a later revert are inaccurate.
 

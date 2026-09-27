@@ -48,7 +48,7 @@ export function getBlockExplorerTxLink(chainId: number, txnHash: string) {
     return "";
   }
 
-  return `${blockExplorerTxURL}/tx/${txnHash}`;
+  return `${blockExplorerTxURL}/${HEDERA_CHAIN_IDS.has(chainId) ? "transaction" : "tx"}/${txnHash}`;
 }
 
 /**
@@ -59,11 +59,16 @@ export function getBlockExplorerAddressLink(network: chains.Chain, address: stri
   const blockExplorerBaseURL = network.blockExplorers?.default?.url;
 
   if (!blockExplorerBaseURL) {
-    return `https://hashscan.io/testnet/account/${address}`;
+    return `/blockexplorer/address/${address}`;
   }
 
   const pathSegment = HEDERA_CHAIN_IDS.has(network.id) ? "account" : "address";
   return `${blockExplorerBaseURL}/${pathSegment}/${address}`;
+}
+
+export function getExplorerLink(network: chains.Chain, address?: string) {
+  if (network.id === chains.hardhat.id) return "/blockexplorer";
+  return address ? getBlockExplorerAddressLink(network, address) : network.blockExplorers?.default?.url ?? "/blockexplorer";
 }
 
 /**

@@ -1,25 +1,71 @@
 # Evidence
 
-## How to use this record
+## Current deployment — 27 September 2026
 
-**Deployment status:** the local `PolicyRegistry.fund()` now rejects funding
-outside Draft/Active states and at or after the deadline. The deployed contracts
-listed below predate this fix. Their transaction and verification links remain
-historical evidence, not proof that the deployed demo has the new guards.
-No replacement deployment has been made.
+The contracts the app uses today, on Hedera testnet. They include the funding
+guard and the surplus `withdraw()` (settlement credits any escrow beyond the
+payout to the creator instead of sending it, so a creator that refuses HBAR
+cannot block the beneficiary's payout). All three are verified on Sourcify
+with `exact_match`.
 
-This is a historical deployment record, not a claim that the current local
-checkout has passed every submission gate. The linked successful settlement
-was checked independently during the local review; the other historical
-verification claims have not all been repeated. See [README.md](README.md)
-for current validation scope and limitations.
+| Contract | Address | |
+| --- | --- | --- |
+| `PolicyRegistry` | `0xB3BfE675cbab5bF146fAc6B4B6a6B3d02f7648Ea` | [HashScan](https://hashscan.io/testnet/contract/0xB3BfE675cbab5bF146fAc6B4B6a6B3d02f7648Ea) · [Sourcify](https://repo.sourcify.dev/contracts/full_match/296/0xB3BfE675cbab5bF146fAc6B4B6a6B3d02f7648Ea/) |
+| `Settlement` | `0x9c6b35c1b7b95B0C60d02fa43bACf399E26f73B3` | [HashScan](https://hashscan.io/testnet/contract/0x9c6b35c1b7b95B0C60d02fa43bACf399E26f73B3) · [Sourcify](https://repo.sourcify.dev/contracts/full_match/296/0x9c6b35c1b7b95B0C60d02fa43bACf399E26f73B3/) |
+| `ChainlinkPriceSource` | `0x63c544315Dc21187eb1B6668bE8139e8a778C6d1` | [HashScan](https://hashscan.io/testnet/contract/0x63c544315Dc21187eb1B6668bE8139e8a778C6d1) · [Sourcify](https://repo.sourcify.dev/contracts/full_match/296/0x63c544315Dc21187eb1B6668bE8139e8a778C6d1/) |
+
+Deployer and contract owner: [`0.0.10743664`](https://hashscan.io/testnet/account/0.0.10743664).
+Evidence operator: [`0.0.10349640`](https://hashscan.io/testnet/account/0.0.10349640).
+
+### A settlement, end to end
+
+Policy #1 on HBAR/USD, 1 HBAR payout, settled by an account that is neither
+its creator nor its beneficiary. A second `trigger()` from the same account
+reverted, as I1 requires.
+
+| Step | Transaction |
+| --- | --- |
+| `createPolicy` | [`0x6dc42fa1b473e210…`](https://hashscan.io/testnet/transaction/0x6dc42fa1b473e210026caa08b0061088284d3dc42b4ef91117888ba33737cf12) |
+| `fund` the escrow | [`0x65d06b411802719b…`](https://hashscan.io/testnet/transaction/0x65d06b411802719b3db7f450851fbe7fe27551bfad3b0e13d43ff05220aba773) |
+| Fund the settler | [`0xac634776950c2dd2…`](https://hashscan.io/testnet/transaction/0xac634776950c2dd20ee3a923da64c6283c0e9ba558560d1d804ff0ce20a3b73c) |
+| **`trigger()` — by the stranger** | [`0x4550455177efd06a…`](https://hashscan.io/testnet/transaction/0x4550455177efd06a74bceae92ab0c3ec8b55d34599db6a30f61bc0ccbc1759a0) |
+
+| Party | Account |
+| --- | --- |
+| Beneficiary | [`0x6789a959BC0Aef740806473b9ad6567ce472FC1B`](https://hashscan.io/testnet/account/0x6789a959BC0Aef740806473b9ad6567ce472FC1B) — received 1 HBAR |
+| Settler | [`0xE7e1CAd0f788F7092d24bB60EA22836756B8FF15`](https://hashscan.io/testnet/account/0xE7e1CAd0f788F7092d24bB60EA22836756B8FF15) |
+
+Settled on an HBAR/USD reading of 0.09531825, inside that feed's 3,600-second
+bound. The first attempt at this run funded a settler and then failed before
+`trigger()`: the throwaway wallet priced its call at 218 wei and the relay
+refused it. `runLifecycle.ts` now sets the gas price explicitly and can
+resume a funded policy with `LIFECYCLE_POLICY_ID`.
+
+### Evidence topic
+
+Topic [`0.0.10743528`](https://hashscan.io/testnet/topic/0.0.10743528), created
+with a submit key, holds three records for policy #1: `policy_created`,
+`triggered`, `settled`. `/evidence` opens on it by default.
+
+```sh
+curl -s "https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10743528/messages?limit=100&order=asc"
+```
+
+Reproduce with `yarn hardhat:deploy`, `yarn lifecycle` and
+`yarn evidence:publish --network hederaTestnet`; the first two prompt for the
+deployer password.
 
 HCS records were published separately by an operator. Their ordering does not
 prove that they capture every contract event or independently validate the
-operator's claims. This file does not demonstrate this deployment completing
-an HSS scheduled expiry.
+operator's claims. This file does not demonstrate an HSS scheduled expiry.
 
-## Recorded deployment
+---
+
+## Previous deployment — 21 September 2026 (history)
+
+Replaced on 27 September 2026. These contracts predate the funding guard and
+the surplus `withdraw()`; the app no longer points at them. The records below
+are kept because the links still verify what happened then.
 
 Everything below happened on Hedera testnet on **21 September 2026** and can
 be checked without running this repository, without a wallet, and without

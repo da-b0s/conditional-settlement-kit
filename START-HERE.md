@@ -25,7 +25,7 @@ Stop the server with Ctrl+C.
 | --- | --- |
 | Home | Price-triggered escrow lifecycle |
 | Feeds | Live prices, reading ages and configured freshness limits |
-| Evidence | Enter topic `0.0.10651678` for the recorded demo trail |
+| Evidence | Opens on topic `0.0.10743528`, the recorded demo trail |
 | Policies | Review the flow; connect a funded testnet wallet when ready to transact |
 
 Reaching a price threshold does not automatically send a settlement transaction.
@@ -48,8 +48,8 @@ still take time; Feeds and Evidence show progress and retry options.
 ## 4. Before changing configuration
 
 - Inspect the included testnet deployment without redeploying it.
-- The local funding guard is not deployed to that demo. Do not send funds to
-  finished or deadline-passed policies there. See README.md before transacting.
+- The app and contracts target Hedera testnet only. Surplus escrow from a
+  settled policy is claimed with **Withdraw** on the Policies page.
 - A clean clone has no private `.env`. Treat credentials supplied in an archive
   as exposed; use your own testnet account for writes.
 - Do not publish private environment files. Public topic IDs are configuration;
@@ -58,5 +58,5 @@ still take time; Feeds and Evidence show progress and retry options.
   the policy UI.
 
 Continue with [README.md](README.md) for implemented features, trust assumptions,
-tests, local-chain setup and operator commands. Use [EVIDENCE.md](EVIDENCE.md)
-for historical transaction links and [AGENTS.md](AGENTS.md) for coding guidance.
+tests and operator commands. Use [EVIDENCE.md](EVIDENCE.md)
+for transaction links and [AGENTS.md](AGENTS.md) for coding guidance.

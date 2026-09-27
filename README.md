@@ -10,7 +10,7 @@ The template combines Chainlink price reads, a settlement state machine and
 an optional HCS evidence publisher. It is an unaudited developer starting
 point, not a production financial product.
 
-## Start locally
+## Quick start
 
 Use Node **20.18.3 or later**, Git, and an internet connection for installation
 and live testnet reads. Yarn 3.2.3 is included; no global Yarn installation is
@@ -26,9 +26,9 @@ If Yarn is already configured, `yarn install --immutable` and `yarn next:dev`
 are equivalent. All scripts below can use the vendored Yarn command.
 
 No wallet, private key, `.env` file or redeployment is needed to explore Home,
-Feeds or a public evidence topic. Without a configured topic, enter
-`0.0.10651678` on Evidence to read the recorded demo trail. Wallet transactions
-require a funded account on the selected network.
+Feeds or Evidence, which opens on this deployment's topic `0.0.10743528`.
+Wallet transactions require a funded Hedera testnet account. Hedera testnet is
+the only network the app and contracts target.
 
 First installation and first visits in development mode can take several
 minutes, depending on the computer and network. Loading feedback does not
@@ -55,7 +55,7 @@ for a shorter walkthrough.
 | Expiry/refund | Permissionless `expire()`, followed by creator-only `refund()` |
 | Evidence | Public HCS reader and separate operator-run publisher for selected events |
 | Scheduling | Optional `scheduleExpiry()` helper; not automatically invoked by the policy UI |
-| Developer tools | Contract debugger, block explorer, mock-feed local deployment and tests |
+| Developer tools | Contract debugger, HashScan links for the deployment, offline contract and library tests |
 
 Milestone payments, grants, delivery confirmation and warranty claims are
 **possible extensions**, not shipped workflows. They need their own condition
@@ -69,13 +69,13 @@ implemented; `IPriceSource` is the extension point.
    parallel RPC read has a 15-second deadline, including its response body.
    Healthy feeds remain visible if others fail. A total outage shows the
    configuration and retry option. Retries fetch fresh data.
-3. **Evidence:** enter `0.0.10651678` for the recorded testnet lifecycle. Reads
+3. **Evidence:** opens on topic `0.0.10743528`, the recorded testnet lifecycle. Reads
    share a 15-second budget across pagination and the empty-topic check. A
    timeout reports failure rather than presenting the partial read as complete.
 4. **Policies:** connect a funded testnet wallet to create and fund a policy,
    then submit settlement or expiry/refund transactions. These spend testnet
    HBAR; opening the page does not send a transaction.
-5. **Debug Contracts / Block Explorer:** inspect deployed state and transactions.
+5. **Debug Contracts / Block Explorer:** inspect deployed state, and follow links to HashScan.
 
 Settlement checks the observation available **when the transaction executes**.
 It does not prove that a price crossed the threshold earlier. Neither a price
@@ -125,8 +125,8 @@ Before adapting the template, understand these limits:
   does not make faulty or malicious authorized settlement logic harmless.
 - `preview()` does not perform every lifecycle check from `trigger()`.
   A positive preview cannot guarantee transaction success.
-- The first funding call must cover the payout or it reverts. The local
-  `fund()` now accepts only Draft or Active policies strictly before their
+- The first funding call must cover the payout or it reverts. `fund()`
+  accepts only Draft or Active policies strictly before their
   deadline. Later states reject deposits with `FundingNotAllowed`; a Draft
   or Active policy at or past its deadline rejects them with `AlreadyExpired`.
   Valid Active top-ups are still allowed. Excess funds and refunds go to the
@@ -140,13 +140,12 @@ Before adapting the template, understand these limits:
 - Reverted transactions roll back their events. Legacy source comments saying
   `TriggerAccepted` survives a later revert are inaccurate.
 
-**Local fix versus deployed demo:** the funding guard is a local source change.
-The recorded testnet deployment has not been replaced and does not include it.
-Do not send deposits to finished or deadline-passed policies on that deployment.
-A new deployment and updated frontend deployment information are required to
-use the fix on testnet. Historical source-verification links apply to the old
-source snapshot, not this modified contract. The legacy comments identified
-above should not be treated as extra guarantees.
+**Current deployment:** the testnet contracts in
+[deployedContracts.ts](packages/nextjs/contracts/deployedContracts.ts) include
+the funding guard and surplus `withdraw()`, and are verified on Sourcify. See
+[EVIDENCE.md](EVIDENCE.md). The earlier deployment it replaced lacked both;
+its records are kept there as history. The legacy comments identified above
+should not be treated as extra guarantees.
 
 ## HCS evidence: a separate operator task
 
@@ -201,7 +200,7 @@ execution, successful payout or automatic refunds.
 | `HEDERA_KEY_TYPE` | `packages/hardhat/.env` | Operator key interpretation; defaults to ECDSA |
 | `HEDERA_NETWORK` | `packages/hardhat/.env` | Operator SDK network; keep consistent with the deployment |
 | `EVIDENCE_TOPIC` | `packages/hardhat/.env` | Publisher's topic |
-| `NEXT_PUBLIC_EVIDENCE_TOPIC` | `packages/nextjs/.env.local` | Frontend's default topic |
+| `NEXT_PUBLIC_EVIDENCE_TOPIC` | `packages/nextjs/.env.local` | Overrides the default topic (`PROJECT_EVIDENCE_TOPIC` in `lib/settlement/hcs.ts`) |
 | `NEXT_PUBLIC_HEDERA_TESTNET_RPC_URL` | `packages/nextjs/.env.local` | Wallet/scaffold RPC override; `/feeds` uses `DEFAULT_RPC.testnet` in `feedReader.ts` |
 | `NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID` | `packages/nextjs/.env.local` | Your WalletConnect project configuration |
 
@@ -221,24 +220,16 @@ node .yarn/releases/yarn-3.2.3.cjs hardhat:deploy --network hederaTestnet
 The deployment configures sources, checks registry wiring and writes deployment
 information used by the frontend. It is not required to inspect the included demo.
 
-For local contract development, run these in separate terminals from the root
-(after installation; wait for the node before deploying):
-
-```sh
-node .yarn/releases/yarn-3.2.3.cjs hardhat:chain:local
-node .yarn/releases/yarn-3.2.3.cjs hardhat:deploy --network localhost
-node .yarn/releases/yarn-3.2.3.cjs next:dev
-```
-
-Select Hedera Local Fork (31337), connect a local/burner wallet and use
-**Fund locally**. This is an ordinary Hardhat chain with a mock feed, not a
-full Hedera network. Feeds and Evidence still read testnet. Local deployment
-rewrites generated deployment information; review that diff afterward.
+Deploying, `lifecycle` and `failures` all prompt for the deployer password
+and run on `hederaTestnet` by default; any other network is refused. Run any
+other way, Hardhat would sign with its public test key, which holds no HBAR.
+Contract tests still run offline in Hardhat's in-memory chain against a mock
+feed; that is a test fixture, not a deployment target.
 
 Use [units.ts](packages/nextjs/lib/settlement/units.ts) for payout arguments
 and transaction values. The implementation distinguishes Hedera contract
-amounts (8 decimals) from relay transaction values (18); local Hardhat
-contracts use 18. Price thresholds use 18 decimals independently of payout units.
+amounts (8 decimals) from relay transaction values (18); the in-memory test
+chain uses 18. Price thresholds use 18 decimals independently of payout units.
 
 ## Validation and evidence
 
@@ -255,8 +246,8 @@ node .yarn/releases/yarn-3.2.3.cjs next:build
 ```
 
 Keep `HEDERA_FORKING` unset for offline contract tests. Recent local checks
-recorded 137 core-library tests passing. The funding-guard suite now includes
-77 passing contract tests, covering rejected deposits, unchanged escrow balances,
+recorded 160 core-library tests passing. The contract suite has
+79 passing tests, covering rejected deposits, unchanged escrow balances,
 deadline boundaries and valid top-up recovery. Contract lint also passes.
 The separate `hardhat:check-types` command now passes after adding generated
 contract and event types to the evidence and demo scripts. Run `hardhat:compile`

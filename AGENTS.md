@@ -34,9 +34,9 @@ yarn install
 
 # Quality — all four must pass before any commit
 yarn lint
-yarn next:test        # vitest, 137 tests at the latest local check, offline
+yarn next:test        # vitest, 160 tests at the latest check, offline
 yarn next:build
-yarn hardhat:test     # 77 tests including funding guards; timing varies
+yarn hardhat:test     # 79 tests, in-memory chain; timing varies
 
 # The live measurement. Needs the network, no credentials.
 yarn next:test:live
@@ -268,10 +268,13 @@ Do **not**:
   permissionless and the deadline is enforced on-chain. If a schedule never
   fires the system degrades to "someone must call expire()", never to "the
   escrow is stuck",
-- and **never `git push`, create a remote, open a pull request, merge, tag a
-  release, or change repository visibility. Publication is a human decision.**
+- add a local chain, fork or another network to the app. Hedera testnet is
+  the only target: the frontend, the deploy script and the key wrapper all
+  refuse anything else,
+- and **never commit a key.** Pushing to `origin` is allowed, but a key that
+  reaches a public repository is scraped within seconds and git keeps it in
+  history.
 
-That last item is not a style preference. Local commits, branches and rebases
-are always fine — commit constantly. Publication is irreversible and belongs
-to the project owner alone. If you believe a task requires pushing, stop and
-say so instead.
+That last item is not a style preference. Commit constantly. Opening a pull
+request, tagging a release or changing repository visibility is still the
+project owner's decision.

@@ -50,11 +50,14 @@ async function main() {
     process.exit(1);
   }
 
-  const hardhat = spawn("hardhat", args, {
+  // One command string rather than (command, args) with `shell: true`: Node 24
+  // deprecates the latter (DEP0190). The args are this repo's own task names
+  // and flags, never user-supplied text.
+  const hardhat = spawn(["hardhat", ...args].join(" "), {
     stdio: "inherit",
     // Only the child process sees the decrypted key; it is never written down.
     env: { ...process.env, __RUNTIME_DEPLOYER_PRIVATE_KEY: privateKey },
-    shell: process.platform === "win32",
+    shell: true,
   });
 
   hardhat.on("exit", code => {

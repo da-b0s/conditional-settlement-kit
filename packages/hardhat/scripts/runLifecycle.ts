@@ -84,10 +84,17 @@ async function main() {
   console.log(`registry    ${registryAddress}`);
   console.log(`settlement  ${settlementAddress}\n`);
 
+  // RESUME: LIFECYCLE_POLICY_ID=<id> settles an existing Active policy
+  // instead of creating one — for a run that funded a policy and then failed
+  // before trigger(). A fresh settler is still used, so the claim holds.
+  const resumeId = process.env.LIFECYCLE_POLICY_ID?.trim();
+
   // Two throwaway accounts: one to be paid, one to do the settling.
-  const beneficiary = ethers.Wallet.createRandom().connect(provider);
+  const beneficiaryAddress = resumeId
+    ? (await registry.getPolicy(BigInt(resumeId))).beneficiary
+    : ethers.Wallet.createRandom().address;
   const settler = ethers.Wallet.createRandom().connect(provider);
-  console.log(`beneficiary ${beneficiary.address}  (will be paid)`);
+  console.log(`beneficiary ${beneficiaryAddress}  (will be paid)`);
   console.log(`settler     ${settler.address}  (neither creator nor beneficiary)\n`);
 
   const steps: { what: string; hash: string }[] = [];
@@ -119,30 +126,42 @@ async function main() {
     await creator.sendTransaction({ to: settler.address, value: SETTLER_FUNDING, gasLimit: 2_000_000 }),
   );
 
-  await record(
-    "createPolicy",
-    await registry.createPolicy(beneficiary.address, HBAR_USD, threshold, true, payoutContractAmount, expiry, {
-      gasLimit: 1_000_000,
-    }),
-  );
-  const policyId = (await registry.nextPolicyId()) - 1n;
+  let policyId: bigint;
+  if (resumeId) {
+    policyId = BigInt(resumeId);
+    console.log(`  resuming policy #${policyId} (created and funded by an earlier run)`);
+  } else {
+    await record(
+      "createPolicy",
+      await registry.createPolicy(beneficiaryAddress, HBAR_USD, threshold, true, payoutContractAmount, expiry, {
+        gasLimit: 1_000_000,
+      }),
+    );
+    policyId = (await registry.nextPolicyId()) - 1n;
 
-  await record("fund the escrow", await registry.fund(policyId, { value: payoutTxValue, gasLimit: 1_000_000 }));
+    await record("fund the escrow", await registry.fund(policyId, { value: payoutTxValue, gasLimit: 1_000_000 }));
+  }
 
   const state = await registry.stateOf(policyId);
   console.log(`\n  policy #${policyId} state=${state} (2=Active)`);
   if (state !== 2n) throw new Error(`expected Active after funding, got ${state}`);
 
-  const before = await provider.getBalance(beneficiary.address);
+  const before = await provider.getBalance(beneficiaryAddress);
+
+  // The settler is a bare ethers Wallet, so it prices its own transactions
+  // from the relay's fee data — which came back as 218 wei and was refused
+  // ("below configured minimum gas price"). Hardhat-managed signers are not
+  // affected. Ask for the network gas price and set it explicitly.
+  const gasPrice = BigInt(await provider.send("eth_gasPrice", []));
 
   // THE POINT: an account with no relationship to this policy settles it.
   const settlementAsStranger = settlementRead.connect(settler);
   const triggerHash = await record(
     "trigger() — by the stranger",
-    await settlementAsStranger.trigger(policyId, { gasLimit: TRIGGER_GAS }),
+    await settlementAsStranger.trigger(policyId, { gasLimit: TRIGGER_GAS, gasPrice }),
   );
 
-  const after = await provider.getBalance(beneficiary.address);
+  const after = await provider.getBalance(beneficiaryAddress);
   const finalState = await registry.stateOf(policyId);
   const policy = await registry.getPolicy(policyId);
 
@@ -160,7 +179,7 @@ async function main() {
   // I1, against the live chain rather than a local fixture.
   process.stdout.write("\n  second trigger() ... ");
   try {
-    await (await settlementAsStranger.trigger(policyId, { gasLimit: TRIGGER_GAS })).wait();
+    await (await settlementAsStranger.trigger(policyId, { gasLimit: TRIGGER_GAS, gasPrice })).wait();
     throw new Error("SECOND TRIGGER SUCCEEDED — I1 VIOLATED");
   } catch (error) {
     if (error instanceof Error && error.message.includes("I1 VIOLATED")) throw error;
@@ -175,7 +194,7 @@ async function main() {
   console.log(`\npolicy id      ${policyId}`);
   console.log(`registry       ${hashscan("contract", registryAddress)}`);
   console.log(`settlement     ${hashscan("contract", settlementAddress)}`);
-  console.log(`beneficiary    ${hashscan("account", beneficiary.address)}`);
+  console.log(`beneficiary    ${hashscan("account", beneficiaryAddress)}`);
   console.log(`settler        ${hashscan("account", settler.address)}`);
   console.log(`trigger tx     ${hashscan("transaction", triggerHash)}`);
 }

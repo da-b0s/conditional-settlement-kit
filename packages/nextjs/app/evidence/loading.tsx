@@ -2,6 +2,6 @@ import { PageLoading } from "~~/components/PageLoading";
 
 export default function Loading() {
   return (
-    <PageLoading title="Fetching evidence" description="Reading the public settlement trail from Hedera testnet." />
+    <PageLoading title="Reading the public record" description="Fetching evidence from Hedera's consensus service." />
   );
 }

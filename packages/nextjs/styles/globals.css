@@ -1210,3 +1210,79 @@ main:focus {
      absent rather than as disabled. */
   color: color-mix(in oklab, var(--color-base-content) 45%, transparent);
 }
+
+/* ===========================================================================
+   TALON LOADER — the mark holding on while a page loads.
+   The claw tightens around its joint with the crossbar, the point pulses,
+   and a slim bar runs underneath. Used by components/PageLoading.tsx.
+   =========================================================================== */
+.talon-animated .talon-claw {
+  transform-box: view-box;
+  transform-origin: 33px 19px; /* where the stem meets the crossbar */
+  animation: talon-grip 1.6s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+}
+.talon-animated .talon-point {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: talon-pulse 1.6s ease-in-out infinite;
+}
+@keyframes talon-grip {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  40%,
+  60% {
+    transform: rotate(9deg);
+  }
+}
+@keyframes talon-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+}
+.talon-progress {
+  position: relative;
+  width: 11rem;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-base-300);
+}
+.talon-progress::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  animation: talon-run 1.6s ease-in-out infinite;
+}
+@keyframes talon-run {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(260%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .talon-animated .talon-claw,
+  .talon-animated .talon-point,
+  .talon-progress::after {
+    animation: none;
+  }
+  .talon-animated .talon-point {
+    opacity: 1;
+  }
+  .talon-progress::after {
+    width: 100%;
+    opacity: 0.5;
+  }
+}

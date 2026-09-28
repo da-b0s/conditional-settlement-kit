@@ -5,7 +5,8 @@ Claude Code loads it through `CLAUDE.md`.
 
 ## Project overview
 
-This is the **Conditional Settlement Kit**: a scaffold-hbar template for
+This is **Talon** (repository `conditional-settlement-kit`): a scaffold-hbar
+template, and a Scaffold-HBAR bounty entry, for
 price-triggered settlement. Escrow a payout, attach it to a price condition,
 and let anyone settle it once the condition holds.
 
@@ -60,7 +61,7 @@ yarn evidence:topic
 | Deploy | `packages/hardhat/deploy/` | Verifies its own wiring. See below. |
 | Contract tests | `packages/hardhat/test/` | One file per invariant, named for it. |
 | **Core library** | `packages/nextjs/lib/settlement/` | **Framework-free. See below.** |
-| Routes | `packages/nextjs/app/` | `/`, `/feeds`, `/evidence`, `/policies`, `/debug`, `/blockexplorer`. |
+| Routes | `packages/nextjs/app/` | `/`, `/how-it-works`, `/feeds`, `/evidence`, `/policies`, `/debug`, `/blockexplorer`. |
 | The invariants | `packages/nextjs/lib/settlement/invariants.ts` | The contract. Read it first. |
 
 ## The rules that matter

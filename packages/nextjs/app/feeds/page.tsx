@@ -33,7 +33,7 @@ export default async function FeedsPage() {
   if (!("error" in report) && report.feeds.length === 0) {
     return (
       <div className="mx-auto w-full max-w-5xl px-4 py-10">
-        <h1 className="text-3xl font-bold">Live feeds</h1>
+        <h1 className="text-3xl font-bold">Live prices</h1>
         <div role="alert" className="alert alert-warning mt-6">
           <ExclamationTriangleIcon className="h-5 w-5 shrink-0" />
           <div>
@@ -52,7 +52,7 @@ export default async function FeedsPage() {
   if ("error" in report) {
     return (
       <div className="mx-auto w-full max-w-5xl px-4 py-10">
-        <h1 className="text-3xl font-bold">Live feeds</h1>
+        <h1 className="text-3xl font-bold">Live prices</h1>
         <div role="alert" className="alert alert-warning mt-6">
           <ExclamationTriangleIcon className="h-5 w-5 shrink-0" />
           <div>
@@ -74,7 +74,7 @@ export default async function FeedsPage() {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold">Live feeds</h1>
+        <h1 className="text-3xl font-bold">Live prices</h1>
         <p className="mt-2 max-w-3xl text-base-content/70">
           Every Chainlink price feed on Hedera testnet, read from the chain when this page was rendered. No wallet and
           no credentials were involved — this is a JSON-RPC call from the server.

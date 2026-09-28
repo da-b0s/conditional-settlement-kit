@@ -73,13 +73,13 @@ const BlockExplorer: NextPage = () => {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold mb-1.5">The live feeds</h3>
+            <h3 className="text-sm font-semibold mb-1.5">Live prices</h3>
             <p className="text-xs opacity-60 mb-2">
               The seven Chainlink feeds this kit can settle against, read from the chain on load, with the age each is
               reporting against the bound enforced for it.
             </p>
             <Link href="/feeds" className="link link-hover text-sm text-primary">
-              Open the feed reader →
+              See live prices →
             </Link>
           </div>
         </div>

@@ -1,6 +1,7 @@
 # Start here
 
-This template demonstrates price-triggered HBAR escrow on Hedera testnet.
+Talon demonstrates price-triggered HBAR escrow on Hedera testnet. It is a
+Scaffold-HBAR template, built for the Scaffold-HBAR template bounty.
 Start with the read-only pages; wallet transactions and operator setup can wait.
 
 ## 1. Run the frontend
@@ -23,7 +24,8 @@ Stop the server with Ctrl+C.
 
 | Page | What to check |
 | --- | --- |
-| Home | Price-triggered escrow lifecycle |
+| Home | What Talon does, in one sentence |
+| How it works | The lifecycle, an FAQ and the guarantees |
 | Feeds | Live prices, reading ages and configured freshness limits |
 | Evidence | Opens on topic `0.0.10752744`, the recorded demo trail |
 | Policies | Review the flow; connect a funded testnet wallet when ready to transact |

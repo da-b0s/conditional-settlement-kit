@@ -6,6 +6,7 @@ import { PolicyForm } from "./PolicyForm";
 import { WithdrawPanel } from "./WithdrawPanel";
 import { HederaPortalFaucet } from "@scaffold-hbar-ui/components";
 import { useAccount } from "wagmi";
+import { TalonMark } from "~~/components/TalonMark";
 import { RainbowKitCustomConnectButton } from "~~/components/scaffold-hbar";
 import { useDeployedContractInfo, useScaffoldReadContract } from "~~/hooks/scaffold-hbar";
 import { useTargetNetwork } from "~~/hooks/scaffold-hbar/useTargetNetwork";
@@ -41,7 +42,12 @@ export const PolicyFlow = () => {
   });
 
   if (registryLoading) {
-    return <div className="skeleton h-40 w-full" />;
+    return (
+      <div className="flex items-center gap-3 rounded-box border border-base-300 p-6" role="status">
+        <TalonMark animated className="h-8 w-8 text-base-content" />
+        <span className="text-sm text-base-content/70">Finding the contracts on Hedera testnet…</span>
+      </div>
+    );
   }
 
   // Nothing deployed on this network. Say which network and what to run.

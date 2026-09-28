@@ -1,17 +1,27 @@
+import { TalonMark } from "~~/components/TalonMark";
+
+/**
+ * The Talon loading screen: the claw tightens, the point pulses, a slim bar
+ * runs underneath. Server-renderable, CSS-only motion (styles/globals.css),
+ * and still under prefers-reduced-motion.
+ */
 export function PageLoading({
-  title = "Loading page",
-  description = "Please wait while this page is prepared.",
+  title = "Getting a grip",
+  description = "Loading the page.",
 }: {
   title?: string;
   description?: string;
 }) {
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-10" role="status" aria-live="polite">
-      <div className="flex items-center gap-3">
-        <span className="loading loading-spinner loading-md text-primary" aria-hidden="true" />
-        <h1 className="text-2xl font-bold">{title}</h1>
-      </div>
-      <p className="mt-3 text-base-content/80">{description}</p>
+    <div
+      className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center px-4 py-24 text-center"
+      role="status"
+      aria-live="polite"
+    >
+      <TalonMark animated className="h-16 w-16 text-base-content" />
+      <p className="mt-6 text-lg font-semibold">{title}</p>
+      <p className="mt-1.5 text-sm text-base-content/65">{description}</p>
+      <div className="talon-progress mt-6" aria-hidden="true" />
     </div>
   );
 }

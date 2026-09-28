@@ -1,6 +1,13 @@
-# Conditional Settlement Kit
+# Talon
 
-A Scaffold-HBAR template for **price-triggered HBAR escrow on Hedera testnet**.
+**Holds until it's true.** Lock HBAR into a promise that pays out
+automatically when a price hits its target, or returns to the creator if it
+doesn't.
+
+Talon is a [Scaffold-HBAR](https://github.com/hashgraph/scaffold-hbar)
+template, built as an entry to the
+[Scaffold-HBAR template bounty](https://hedera.com/blog/scaffold-hbar-template-bounty/),
+for **price-triggered HBAR escrow on Hedera testnet**.
 A creator defines a beneficiary, payout, price threshold and deadline, then
 funds the policy. Anyone can submit a settlement transaction when the latest
 accepted oracle reading meets the condition. After expiry, anyone can mark the
@@ -64,7 +71,8 @@ implemented; `IPriceSource` is the extension point.
 
 ## Suggested demo journey
 
-1. **Home:** understand the escrow lifecycle and its intended checks.
+1. **Home and How it works:** the one-sentence pitch, then the full lifecycle,
+   an FAQ, and the guarantees with their tests.
 2. **Feeds:** inspect live readings and configured freshness limits. Each
    parallel RPC read has a 15-second deadline, including its response body.
    Healthy feeds remain visible if others fail. A total outage shows the
@@ -280,17 +288,16 @@ apply machine-specific workarounds only after reproducing their symptoms.
 
 ## External template and submission
 
-Once the owner chooses to publish a public repository, consumers can scaffold
-from it by replacing `OWNER/REPOSITORY` in this command:
+Talon is a Scaffold-HBAR template: with the repository public, a new project
+can be scaffolded from it with:
 
 ```sh
-npm create scaffold-hbar@latest -- --template OWNER/REPOSITORY
+npm create scaffold-hbar@latest -- --template da-b0s/conditional-settlement-kit
 ```
 
-This is a future publication step, not a working reference to a published copy
-of this local project. Verify the actual scaffold output and repeat install,
-lint, build and route checks from that fresh copy before submission.
-The manifest is [template.json](template.json).
+Verify the scaffold output and repeat install, lint, build and route checks
+from that fresh copy before submission. The manifest is
+[template.json](template.json).
 
 Harness configuration is in [.harness](.harness/). Run its configured checks with:
 

@@ -1,5 +1,5 @@
 import { PageLoading } from "~~/components/PageLoading";
 
 export default function Loading() {
-  return <PageLoading title="Fetching live feeds" description="Reading the latest prices from Hedera testnet." />;
+  return <PageLoading title="Checking live prices" description="Reading the latest Chainlink prices on Hedera." />;
 }

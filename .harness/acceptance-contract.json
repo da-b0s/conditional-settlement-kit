@@ -4,7 +4,7 @@
   "notes": [
     "Only C11 is executableWithTestSigner. Every such assertion spends real testnet HBAR and adds minutes to the run, so the on-chain journey is proven once, end to end, rather than in pieces.",
     "The credential-free assertions come first and are weighted critical on purpose. A stranger with no wallet, no key and no .env must see true live data and be able to audit a settlement. That is the claim most templates cannot make and the one that fails most quietly if it regresses.",
-    "FEED AGES MOVE, AND MOVE A LOT. Read on 21 September 2026 the spread between freshest and stalest feed was 116x; hours later the same day it was 228x, DAI/USD had gone from 23.1 hours to 27 minutes, and the feed a 1-hour global bound would wrongly reject had changed from three stablecoins to BTC/USD. Do NOT assert specific ages or a specific spread. Assert the STRUCTURE: several feeds are minutes old, several are hours old, all are inside their declared heartbeat, and no single bound serves them all.",
+    "Historical feed-age samples are examples, not permanent conditions. Compare current ages with the configured limits; do not require a minimum spread, assume all readings are within a heartbeat, or infer payout safety from age alone.",
     "An assertion that fails because the CHAIN changed is not the same as one that fails because the APP changed. Say which in the evidence."
   ],
   "assertions": [
@@ -19,15 +19,15 @@
     {
       "id": "C2",
       "statement": "The per-feed staleness argument is computed from the live reading, not printed from a constant.",
-      "howToVerify": "On /feeds, read the 'Why each feed carries its own staleness bound' panel. The spread figure it states must be consistent with the ages in the table below it — compute max(age)/min(age) yourself from the rendered rows and confirm it matches. Any feed flagged 'a 1h global bound would reject this' must have an age above one hour AND be marked fresh against its own bound. If no feed currently qualifies, the panel must say so rather than naming feeds that are not in that state.",
+      "howToVerify": "On /feeds, read the 'Why each feed carries its own staleness bound' panel. The spread figure it states must be consistent with the ages in the table below it — compute max(age)/min(age) yourself from the rendered rows and confirm it matches. Any feed flagged 'a 1h global bound would reject this' must have an age above one hour AND be marked within age limit against its own bound. If no feed currently qualifies, the panel must say so rather than naming feeds that are not in that state.",
       "severity": "critical",
       "walletRequired": false,
       "verifiableWithoutCredentials": true
     },
     {
       "id": "C3",
-      "statement": "Every feed is inside its declared heartbeat, which is what makes a single global bound unsafe rather than merely imprecise.",
-      "howToVerify": "For each row on /feeds, confirm the age is below 24 hours — the heartbeat every feed on this network declares. The point being graded is that no feed is misbehaving and the spread happens anyway. Cross-check any two rows directly against the chain: eth_call latestRoundData() on the proxy address shown and compare updatedAt.",
+      "statement": "The feed page distinguishes configured age limits from guarantees of oracle correctness or payout safety.",
+      "howToVerify": "Compare returned observation ages with each configured limit. The page must not claim every feed is within its heartbeat or that all global limits are unsafe. It must explain that settlement also checks price, round, decimals and policy state. A missing reading must be reported, not treated as healthy.",
       "severity": "critical",
       "walletRequired": false,
       "verifiableWithoutCredentials": true
@@ -116,7 +116,7 @@
     {
       "id": "C14",
       "statement": "The template's own documentation cannot point at things that do not exist.",
-      "howToVerify": "Run `yarn next:test`. The invariants suite must pass, including the check that every invariant's testFile resolves to a real file on disk. Then confirm the home page renders those same paths from lib/settlement/invariants.ts rather than from hardcoded prose, by changing one testFile value and observing the page change.",
+      "howToVerify": "Run `yarn next:test`. The invariants suite must pass, including the check that every invariant's testFile resolves to a real file on disk. Then confirm the How it works page renders those same paths from lib/settlement/invariants.ts rather than from hardcoded prose, by changing one testFile value and observing the page change.",
       "severity": "medium",
       "walletRequired": false,
       "verifiableWithoutCredentials": true

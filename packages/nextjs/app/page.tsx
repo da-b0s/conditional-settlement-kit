@@ -23,7 +23,7 @@ const STEPS = [
   {
     icon: ArrowUturnLeftIcon,
     title: "Release",
-    text: "Target hit: the payout is sent. Deadline passed: you get it back.",
+    text: "Target met: submit settlement. Deadline passed: expire the policy and request a refund.",
   },
 ];
 
@@ -34,8 +34,8 @@ export default function Home() {
         <div className="max-w-xl">
           <h1 className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl">Holds until it&apos;s true.</h1>
           <p className="mt-5 text-lg text-base-content/75">
-            Lock HBAR into a promise that pays out automatically when a price hits your target, or comes back to you if
-            it doesn&apos;t.
+            Lock HBAR behind a price target. Anyone can submit the payout when the condition holds; after the deadline,
+            you can reclaim an unsettled policy&apos;s funds.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/policies" className="btn btn-primary">
@@ -74,7 +74,8 @@ export default function Home() {
       </section>
 
       <p className="mt-8 text-center text-sm text-base-content/60">
-        Anyone can trigger the payout once the target is hit, so nobody has to wait on the other side.{" "}
+        Settlement checks the latest accepted price when the transaction executes. Payouts and refunds require a
+        transaction; Talon does not run an automated keeper.{" "}
         <Link href="/how-it-works" className="link text-primary">
           Read how it works
         </Link>

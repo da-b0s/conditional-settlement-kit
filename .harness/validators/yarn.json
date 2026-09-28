@@ -20,13 +20,13 @@
       "name": "test",
       "command": "node .yarn/releases/yarn-3.2.3.cjs next:test",
       "timeoutMs": 180000,
-      "purpose": "132 unit tests over the framework-free core: the evidence builder's refusals, the feed table, the HCS reader against fabricated mirror-node responses, the scheduling guards, and a check that every invariant points at a test file that exists. Hermetic and offline — the live-endpoint suite is deliberately separate so this never fails because testnet was slow."
+      "purpose": "Frontend/library unit tests over the framework-free core: the evidence builder's refusals, the feed table, the HCS reader against fabricated mirror-node responses, the scheduling guards, and a check that every invariant points at a test file that exists. Hermetic and offline — the live-endpoint suite is deliberately separate so this never fails because testnet was slow."
     },
     {
       "name": "contract-test",
       "command": "node .yarn/releases/yarn-3.2.3.cjs hardhat:test:ci",
       "timeoutMs": 300000,
-      "purpose": "65 contract tests, one file per invariant plus a parity check between the deploy script's feed table and the one the UI reads. Uses test:ci, which skips the gas reporter. Neither script enables HEDERA_FORKING: the scaffold ships networks.hardhat.forking unconditional, which sends every deploy and call to Hashio and takes the suite from 12 seconds to 10 minutes while fetching nothing it needs — the feed under test is a local mock, deployed so a bound can be exercised at an age no live feed would ever show."
+      "purpose": "Contract tests, one file per invariant plus a parity check between the deploy script's feed table and the one the UI reads. Uses test:ci, which skips the gas reporter. Neither script enables HEDERA_FORKING: the scaffold ships networks.hardhat.forking unconditional, which sends every deploy and call to Hashio and takes the suite from 12 seconds to 10 minutes while fetching nothing it needs — the feed under test is a local mock, deployed so a bound can be exercised at an age no live feed would ever show."
     },
     {
       "name": "build",

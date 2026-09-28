@@ -6,10 +6,12 @@ description: >
   attach it to a price condition, and let anyone settle it once the condition
   holds. The oracle sits behind IPriceSource so it is swappable; the Chainlink
   implementation stores a staleness bound PER FEED with no global default,
-  because all seven feeds on Hedera testnet declare the same 24-hour heartbeat
-  while their observed ages span more than a hundredfold. Every state change
-  is written to a public consensus topic a counterparty can audit with no
-  credentials at all.
+  so each application can choose acceptable observation ages explicitly.
+  Historical testnet samples showed substantially different ages across feeds;
+  age alone does not establish suitability for a payout. An operator can
+  separately publish selected lifecycle records to a public consensus topic.
+  Anyone can read them without credentials; publishing is not automatic and
+  does not prove that the records cover every contract event.
 
 baseline:
   commands:

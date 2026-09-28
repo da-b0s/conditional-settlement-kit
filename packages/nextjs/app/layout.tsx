@@ -8,7 +8,7 @@ import { getMetadata } from "~~/utils/scaffold-hbar/getMetadata";
 export const metadata = getMetadata({
   title: "Talon — holds until it's true",
   description:
-    "Lock HBAR into a promise that pays out automatically when a price hits your target, or comes back to you if it doesn't. On Hedera testnet.",
+    "Lock HBAR behind a price condition on Hedera testnet. Submit settlement when the condition holds, or reclaim an unsettled policy's funds after its deadline.",
 });
 
 const ScaffoldHbarApp = ({ children }: { children: React.ReactNode }) => {

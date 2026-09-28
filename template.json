@@ -1,4 +1,6 @@
 {
+  "name": "talon",
+  "description": "Price-triggered HBAR escrow on Hedera testnet, with per-feed freshness limits and optional operator-published evidence.",
   "create-scaffold-hbar": {
     "capabilities": {
       "frontend": ["nextjs-app"],

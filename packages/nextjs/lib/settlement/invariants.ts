@@ -59,7 +59,8 @@ export const INVARIANTS: readonly Invariant[] = [
   },
   {
     id: "I4",
-    statement: "Only authorised paths change final state. Emergency controls are explicit and test-covered.",
+    statement:
+      "Only authorised paths change final state. Only the configured Settlement contract can trigger and pay a policy; only its creator can claim an expired policy's refund.",
     provenBy: "Unauthorised caller attempts settle; reverts.",
     testFile: "packages/hardhat/test/I4_authorisation.t.ts",
   },

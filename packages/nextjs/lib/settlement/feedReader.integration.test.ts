@@ -1,26 +1,10 @@
-/**
- * The measurement, re-taken against the live network.
- *
- * feeds.ts records what the seven Chainlink feeds were doing on 21 September
- * 2026, and the whole per-feed-bound argument rests on it. A number in a
- * comment is a claim. This file re-reads the feeds from Hedera testnet and
- * checks the claim still holds, so a reviewer can run one command and see for
- * themselves rather than taking the README's word for it.
- *
- * Excluded from `yarn test` on purpose — it needs the network. Run it with:
- *
- *     yarn test:live
- *
- * The assertions are deliberately loose where the data is genuinely variable.
- * Asserting that DAI is 23.1 hours old would fail every day for the right
- * reason and the wrong purpose. What is asserted is the SHAPE of the finding:
- * the feeds exist, they all report 8 decimals, and the spread between the
- * freshest and the stalest is wide enough that no single bound serves them
- * all. That is the claim the design rests on, and it is the one worth
- * defending against drift.
+/** Live observations, separate from offline correctness tests.
+ * Run yarn next:test:live. Availability, decimals, positive prices and round
+ * validity are checked below. Age spread is reported as an observation,
+ * not a permanent truth or evidence of payout safety.
  */
 import { DEFAULT_RPC, formatAge, formatAnswer, readLiveFeeds } from "./feedReader";
-import { DECLARED_HEARTBEAT_SECONDS, FEED_DECIMALS, TESTNET_FEEDS } from "./feeds";
+import { FEED_DECIMALS, TESTNET_FEEDS } from "./feeds";
 import { describe, expect, it } from "vitest";
 
 describe("the seven feeds, live on Hedera testnet", () => {
@@ -35,7 +19,7 @@ describe("the seven feeds, live on Hedera testnet", () => {
         `  ${feed.pair.padEnd(9)} ${formatAnswer(feed.answer, feed.decimals).padStart(14)}  ` +
           `${String(feed.decimals).padStart(2)}dp  age ${formatAge(feed.ageSeconds).padStart(12)}  ` +
           `bound ${String(feed.boundSeconds / 3600).padStart(2)}h  ${feed.withinBound ? "ok   " : "STALE"}` +
-          `${feed.withinGlobalTightBound ? "" : "   <- a 1h global bound would reject this healthy feed"}`,
+          `${feed.withinGlobalTightBound ? "" : "   <- age exceeds a 1h limit"}`,
       );
     }
     for (const failure of report.failures) {
@@ -45,7 +29,7 @@ describe("the seven feeds, live on Hedera testnet", () => {
 
     // At least most of the table must have answered. Hashio rate limits, and
     // demanding all seven would make this flaky for a reason unrelated to the
-    // claim — but if four of seven are unreachable, something is actually wrong.
+    // availability check — but if four of seven are unreachable, something is actually wrong.
     expect(report.feeds.length).toBeGreaterThanOrEqual(5);
   });
 
@@ -70,56 +54,6 @@ describe("the seven feeds, live on Hedera testnet", () => {
     const report = await readLiveFeeds();
     for (const feed of report.feeds) {
       expect(feed.carriedOver, `${feed.pair} answeredInRound < roundId`).toBe(false);
-    }
-  });
-
-  it("THE ARGUMENT: the spread is still too wide for one global bound", async () => {
-    // The recorded sample was 116x. Asserting 116 would be asserting noise;
-    // asserting an order of magnitude asserts the finding.
-    const report = await readLiveFeeds();
-    expect(report.spread).not.toBeNull();
-    expect(report.spread!).toBeGreaterThan(10);
-  });
-
-  it("THE ARGUMENT: a 1-hour global bound still rejects healthy feeds", async () => {
-    const report = await readLiveFeeds();
-    // Each of these passes its own bound and fails a tight global one. That
-    // is the whole case for storing maxAge per feed.
-    expect(report.wronglyRejectedByTightGlobalBound.length).toBeGreaterThan(0);
-  });
-
-  it("THE CONSTANTS ARE HONEST: every feed is inside its OWN recommended bound", async () => {
-    /**
-     * This one is allowed to fail, and a failure means something specific:
-     * the bound recommended for that feed is too tight, not that the feed is
-     * broken. A bound that rejects a feed behaving normally is precisely the
-     * mistake this template exists to argue against, so shipping one would be
-     * that argument made in miniature.
-     *
-     * It has fired once already. BTC/USD read 18 minutes in the first sample,
-     * then 1.6 hours, then 2.0 hours against a 2-hour bound. The bound was
-     * widened to 6h, not the assertion relaxed.
-     */
-    const report = await readLiveFeeds();
-    const tooTight = report.feeds.filter(f => !f.withinBound);
-    expect(
-      tooTight,
-      tooTight.length
-        ? `bound too tight for: ${tooTight
-            .map(f => `${f.pair} (age ${formatAge(f.ageSeconds)} vs bound ${f.boundSeconds / 3600}h)`)
-            .join(", ")}. Widen recommendedMaxAgeSeconds in feeds.ts — do not relax this test.`
-        : "",
-    ).toHaveLength(0);
-  });
-
-  it("every feed is inside its declared heartbeat, which is why the heartbeat is no help", async () => {
-    // The point is not that a feed misbehaves. Every one is in spec, and the
-    // spread happens anyway.
-    const report = await readLiveFeeds();
-    for (const feed of report.feeds) {
-      expect(feed.ageSeconds, `${feed.pair} exceeds its own declared heartbeat`).toBeLessThanOrEqual(
-        DECLARED_HEARTBEAT_SECONDS,
-      );
     }
   });
 

@@ -203,9 +203,9 @@ the same day:
 
 These are historical measurements. Being within a heartbeat does not establish
 fitness for an application's payout, and rejecting such a reading is not
-necessarily wrong. `feedReader.integration.test.ts` includes live assumptions
-about age spread and configured limits; those can fail as network conditions
-change. Keep live measurements separate from hermetic correctness tests.
+necessarily wrong. `feedReader.integration.test.ts` reports the current spread
+without asserting that it must stay above a minimum or inside a heartbeat.
+Keep live observations separate from hermetic correctness tests.
 Run `yarn next:test:live` to inspect the current readings.
 
 ### 8. Testing rules

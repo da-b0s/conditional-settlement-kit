@@ -76,7 +76,8 @@ export interface LiveFeedReport {
   failures: FeedReadFailure[];
   /** Highest observed age divided by lowest. The headline number. */
   spread: number | null;
-  /** Feeds a single 1-hour bound would reject although each is healthy. */
+  /** Feeds passing their configured age limit but failing a 1-hour limit.
+   * The legacy property name does not imply that rejecting them is wrong. */
   wronglyRejectedByTightGlobalBound: string[];
 }
 

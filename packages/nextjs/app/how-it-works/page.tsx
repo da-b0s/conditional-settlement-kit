@@ -25,7 +25,7 @@ const STEPS = [
   },
   {
     title: "Pay out",
-    text: "Once the price hits the target, anyone can press Settle. The payout goes to the person named, once, and the policy closes.",
+    text: "While the latest accepted price meets the target and the deadline has not passed, anyone can submit Settle. The contract checks again when the transaction executes and pays the named beneficiary once.",
   },
   {
     title: "Or refund",
@@ -36,7 +36,7 @@ const STEPS = [
 const FAQ: { q: string; a: React.ReactNode }[] = [
   {
     q: "What is a policy?",
-    a: "A promise with money locked behind it: if this price reaches this target before this deadline, pay this person. The rules live in a contract on Hedera, so nobody, including the creator, can change them afterwards.",
+    a: "A promise with money locked behind it: if this price reaches this target before this deadline, pay this person. The beneficiary, payout, target and deadline are fixed at creation. The contract owner can still change settlement wiring and feed configuration; this template has no timelock or emergency pause.",
   },
   {
     q: "Why can anyone press Settle?",
@@ -45,7 +45,8 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
         So nobody is a gatekeeper. If only the creator could settle, they could simply never do it. If only the person
         being paid could, they would need to be online with a wallet at the right moment. The contract ignores who
         presses the button and checks only the price, and the money can only ever go to the person named. In practice
-        the one settling is the person being paid, someone helping them, or an app that settles automatically.
+        the one settling is the person being paid or someone helping them. A developer could add an automated service,
+        but Talon does not run one.
       </>
     ),
   },
@@ -57,10 +58,9 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     q: "Where do prices come from, and why are some refused?",
     a: (
       <>
-        From Chainlink price feeds on Hedera. Every feed claims to update at least daily, but in practice some update
-        every few minutes and others every few hours. So each coin gets its own freshness limit: an HBAR price more than
-        an hour old is refused, while stablecoins may be up to a day old. One limit for everything would either refuse
-        healthy prices or pay out on stale ones.{" "}
+        From Chainlink price feeds on Hedera. Talon assigns a separate age limit to each feed: an HBAR price more than
+        an hour old is refused, while the configured stablecoin limits allow up to a day. These are application choices,
+        not guarantees of price accuracy or safety. Developers should choose limits for their own use case.{" "}
         <Link href="/feeds" className="link text-primary">
           See the live prices and their ages
         </Link>
@@ -148,7 +148,8 @@ export default function HowItWorksPage() {
             <h3 className="font-semibold">If you are paying</h3>
             <p className="mt-2 text-sm text-base-content/70">
               You make a promise people can trust without a middleman. In exchange, you cannot take the money back
-              early: it pays out if the target is hit, or returns to you after the deadline.
+              early: someone must submit settlement while the condition holds, or expire the policy after its deadline
+              so you can request a refund.
             </p>
           </div>
           <div className="rounded-box border border-base-300 p-5">

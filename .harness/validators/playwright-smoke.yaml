@@ -88,6 +88,9 @@ routes:
   - name: home
     path: /
 
+  - name: how-it-works
+    path: /how-it-works
+
   # THE CENTRAL CLAIM, with no wallet. This route reads all seven Chainlink
   # proxies live and renders their ages against the per-feed bounds. If it
   # ever regresses into needing a wallet, the credential-free promise is gone
@@ -95,9 +98,8 @@ routes:
   - name: feeds
     path: /feeds
 
-  # The evidence reader with nothing selected. Must invite a topic id rather
-  # than erroring.
-  - name: evidence-empty
+  # The evidence reader opens on the project topic without credentials.
+  - name: evidence-project
     path: /evidence
 
   # A REAL testnet topic that is not ours: 1,000 messages of somebody's NAT

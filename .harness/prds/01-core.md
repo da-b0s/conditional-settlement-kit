@@ -9,28 +9,21 @@ anyone can expire it and the creator takes the escrow back.
 
 ## The problem worth solving
 
-Chainlink on Hedera exposes seven price feeds. All seven declare an
-86,400-second heartbeat, so the obvious implementation is one global
-`maxAge` constant, and that is what every tutorial written against them does.
+A conditional payout needs an explicit policy for how old an oracle observation
+may be. The seven configured Chainlink feeds have different observed ages, and
+an application may accept a different maximum age for each asset. Talon stores
+that limit per feed and refuses registration without one.
 
-It is wrong in both directions:
+Historical measurements from 21 September 2026 showed a 116-fold age spread,
+then a 228-fold spread later that day. These are examples, not permanent
+properties. A reading inside a declared heartbeat is not necessarily suitable
+for a payout, and a stricter application's rejection need not be wrong.
 
-- **Tight** (one hour) rejects the stablecoin feeds, which routinely sit past
-  sixteen hours while behaving exactly as designed.
-- **Loose** (twenty-four hours) accepts an HBAR/USD price a day old — around a
-  hundred updates behind — and settles a payout on it. Nothing looks wrong:
-  the feed is in spec, the call succeeds, the money moves.
-
-The second is the dangerous one, because it is a confident wrong answer rather
-than a failure. So the bound must be stored **per feed**, and there must be no
-global default to fall back into.
-
-This is not a theoretical concern and the numbers are not stable. Measured on
-21 September 2026 the spread between the freshest and stalest feed was 116×;
-re-read hours later it was 228×, DAI/USD had moved from 23.1 hours to 27
-minutes, and the feed that a one-hour bound would wrongly reject had changed
-from three stablecoins to BTC/USD. **Assert the structure, never the
-constants.**
+Report current ages and configured limits without assuming a minimum spread
+or that every feed is healthy. The contract's refusal of stale observations is
+tested deterministically with mock feeds. An operator publishes selected HCS
+records separately; they are not an automatic or independently verified record
+of every transaction. Settlement, expiry and refunds require transactions.
 
 ## Non-negotiables
 

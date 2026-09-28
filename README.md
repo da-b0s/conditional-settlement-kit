@@ -1,8 +1,9 @@
 # Talon
 
-**Holds until it's true.** Lock HBAR into a promise that pays out
-automatically when a price hits its target, or returns to the creator if it
-doesn't.
+**Holds until it's true.** Lock HBAR behind a price condition. Anyone can
+submit settlement when the latest accepted price meets the target. After the
+deadline, an unsettled policy can be expired and its creator can request a
+refund. Neither action happens automatically.
 
 Talon is a [Scaffold-HBAR](https://github.com/hashgraph/scaffold-hbar)
 template, built as an entry to the

@@ -8,7 +8,7 @@ import { DECLARED_HEARTBEAT_SECONDS, TESTNET_FEEDS } from "~~/lib/settlement/fee
 export const metadata: Metadata = {
   title: "Live prices",
   description:
-    "Every Chainlink feed on Hedera testnet, read live, with the age each one is actually reporting against the bound this template enforces.",
+    "The Chainlink feeds configured in Talon, read live from Hedera testnet, with observation ages compared against this template's freshness limits.",
 };
 
 /**
@@ -76,8 +76,8 @@ export default async function FeedsPage() {
       <header className="mb-8">
         <h1 className="text-3xl font-bold">Live prices</h1>
         <p className="mt-2 max-w-3xl text-base-content/70">
-          Every Chainlink price feed on Hedera testnet, read from the chain when this page was rendered. No wallet and
-          no credentials were involved — this is a JSON-RPC call from the server.
+          The Chainlink feeds configured in Talon, read from Hedera testnet when this page was requested. No wallet is
+          needed. These are snapshots, not a continuously updating price ticker.
         </p>
       </header>
 
@@ -85,24 +85,26 @@ export default async function FeedsPage() {
       <section className="mb-8 rounded-box border border-base-300 bg-base-200/40 p-5">
         <h2 className="text-lg font-semibold">Why each feed carries its own staleness bound</h2>
         <p className="mt-2 text-sm text-base-content/80">
-          All {report.feeds.length} feeds declare the same {DECLARED_HEARTBEAT_SECONDS.toLocaleString()}-second
-          heartbeat, so every reading below is &ldquo;within spec&rdquo;. Right now the oldest is{" "}
-          <span className="font-semibold">{report.spread ? `${report.spread.toFixed(0)}×` : "many times"}</span> the age
-          of the freshest.
+          {report.feeds.length} of {TESTNET_FEEDS.length} configured feeds answered. The recorded heartbeat for this
+          feed table is {DECLARED_HEARTBEAT_SECONDS / HOUR} hours; it does not guarantee that a reading is suitable for
+          a payout. Each feed has a separate limit chosen for this template.
         </p>
+        {report.spread !== null && (
+          <p className="mt-2 text-sm">
+            In this snapshot, the oldest observation is {report.spread.toFixed(1)} times the age of the freshest.
+          </p>
+        )}
         {rejectedByTightBound.length > 0 ? (
           <p className="mt-3 text-sm text-base-content/80">
-            A single one-hour bound applied to everything would reject{" "}
-            <span className="font-semibold">{rejectedByTightBound.join(", ")}</span> right now — healthy{" "}
-            {rejectedByTightBound.length === 1 ? "feed, behaving" : "feeds, each behaving"} exactly as designed. A
-            single 24-hour bound would instead accept an HBAR/USD price a full day old and settle a payout on it.
-            Neither is safe, which is why the bound is stored per feed with no global default.
+            A single one-hour limit would reject{" "}
+            <span className="font-semibold">{rejectedByTightBound.join(", ")}</span> right now, although their ages pass
+            this template&apos;s individual limits. A stricter application may intentionally reject them. Choose limits
+            for the risk of your use case.
           </p>
         ) : (
           <p className="mt-3 text-sm text-base-content/80">
-            At this moment every feed happens to be fresh enough that even a one-hour global bound would pass them all.
-            That is luck, not design — reload in an hour. The stablecoin feeds routinely sit past sixteen hours while
-            staying entirely in spec.
+            No returned reading currently passes its individual age limit while failing a one-hour limit. This
+            comparison changes as feeds update; it does not establish that one limit is safe for every use case.
           </p>
         )}
       </section>
@@ -115,7 +117,7 @@ export default async function FeedsPage() {
               <th className="text-right">Price</th>
               <th className="text-right">Age</th>
               <th className="text-right">This template&apos;s bound</th>
-              <th>Verdict</th>
+              <th>Age check</th>
             </tr>
           </thead>
           <tbody>
@@ -133,9 +135,9 @@ export default async function FeedsPage() {
                 <td className="text-right">{feed.boundSeconds / HOUR} hours</td>
                 <td>
                   {feed.withinBound ? (
-                    <span className="badge badge-success badge-sm">fresh</span>
+                    <span className="badge badge-success badge-sm">within age limit</span>
                   ) : (
-                    <span className="badge badge-error badge-sm">would revert</span>
+                    <span className="badge badge-error badge-sm">too old</span>
                   )}
                   {feed.withinBound && !feed.withinGlobalTightBound && (
                     <div className="mt-1 text-xs text-warning">a 1h global bound would reject this</div>
@@ -175,8 +177,8 @@ export default async function FeedsPage() {
           . Read when this page was requested.
         </p>
         <p>
-          The same measurement runs as a test: <span className="font-mono">yarn test:live</span>. It asserts the shape
-          of this finding rather than the exact numbers, because the numbers move and the finding does not.
+          Age is only one check. Settlement also validates the round, price, decimals, policy state and threshold.
+          Developers can inspect current readings with <span className="font-mono">yarn next:test:live</span>.
         </p>
         <p>
           <Link href="/policies" className="link link-hover text-primary">

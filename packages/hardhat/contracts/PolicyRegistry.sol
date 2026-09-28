@@ -108,6 +108,8 @@ contract PolicyRegistry {
     error FundingNotAllowed(uint256 policyId, State state);
     error TransferFailed(address to, uint256 amount);
     error NothingToWithdraw();
+    error ZeroPayout();
+    error ZeroThreshold();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotOwner();
@@ -175,6 +177,10 @@ contract PolicyRegistry {
     ) external returns (uint256 policyId) {
         if (beneficiary == address(0)) revert ZeroAddress();
         if (expiry <= block.timestamp) revert ExpiryInPast(expiry, block.timestamp);
+        // A zero payout promises nothing and a zero threshold is met by any
+        // price (above) or none (below). Both are mistakes, not policies.
+        if (maxPayout == 0) revert ZeroPayout();
+        if (threshold == 0) revert ZeroThreshold();
 
         policyId = nextPolicyId++;
         _policies[policyId] = Policy({
@@ -274,12 +280,12 @@ contract PolicyRegistry {
         _send(msg.sender, amount);
     }
 
-    /// @notice Move a policy to Expired once its deadline has passed.
+    /// @notice Move a policy to Expired once its deadline has passed. Permissionless.
     /// @dev Permissionless on purpose: expiry is a fact about the clock, not a
     ///      privilege. HSS schedules a call to this, but anyone may push it so
     ///      a beneficiary is never stuck waiting on a scheduler.
-    /// @notice Expire a policy whose deadline has passed. Permissionless.
-    /// @dev Accepts BOTH Draft and Active, so every policy can reach a
+    ///
+    ///      Accepts BOTH Draft and Active, so every policy can reach a
     ///      terminal state.
     ///
     ///      NO ESCROW IS AT RISK EITHER WAY, and it is worth being precise

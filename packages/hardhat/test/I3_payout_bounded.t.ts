@@ -203,19 +203,25 @@ describe("I3 — payout never exceeds escrow", () => {
     );
   });
 
-  it("a zero payout is legal and pays nothing while still settling", async () => {
-    // Degenerate but valid: the policy exists to record that a condition was
-    // met. It must not leave value stranded.
-    const policyId = await createFundedPolicy(d, { payout: 0n, escrow: ethers.parseEther("1") });
-    const creatorBefore = await ethers.provider.getBalance(d.creator.address);
+  it("a zero payout is refused at creation", async () => {
+    // It promises the beneficiary nothing; accepting it only invites an
+    // escrow that exists to be refunded.
+    const expiry = (await chainNow()) + 86_400;
+    await expect(
+      d.registry.connect(d.creator).createPolicy(d.beneficiary.address, HBAR_USD, at18("0.08"), true, 0n, expiry),
+    ).to.be.revertedWithCustomError(d.registry, "ZeroPayout");
+  });
 
-    await d.settlement.connect(d.stranger).trigger(policyId);
-
-    expect(await d.registry.stateOf(policyId)).to.equal(State.Settled);
-    // Nothing is stranded: the whole escrow is the creator's to withdraw.
-    expect(await ethers.provider.getBalance(d.creator.address)).to.equal(creatorBefore);
-    expect(await d.registry.withdrawable(d.creator.address)).to.equal(ethers.parseEther("1"));
-    expect(await d.registry.totalEscrowed()).to.equal(0n);
+  it("a zero threshold is refused at creation", async () => {
+    // "At or above 0" is met by every price and "at or below 0" by none.
+    const expiry = (await chainNow()) + 86_400;
+    for (const triggerAbove of [true, false]) {
+      await expect(
+        d.registry
+          .connect(d.creator)
+          .createPolicy(d.beneficiary.address, HBAR_USD, 0n, triggerAbove, ethers.parseEther("1"), expiry),
+      ).to.be.revertedWithCustomError(d.registry, "ZeroThreshold");
+    }
   });
 
   describe("a Draft policy holds nothing, and can still be cleaned up", () => {

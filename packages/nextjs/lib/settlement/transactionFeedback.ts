@@ -30,6 +30,8 @@ const CONTRACT_ERRORS: readonly [RegExp, string][] = [
   ],
   [/FundingNotAllowed/i, "This policy no longer accepts deposits."],
   [/NothingToWithdraw/i, "There is nothing to withdraw for this account."],
+  [/ZeroPayout/i, "Set a payout above zero."],
+  [/ZeroThreshold/i, "Set a threshold price above zero."],
   [/NothingToFund/i, "Enter an amount above zero to fund this policy."],
   [/NotCreator/i, "Only the policy's creator can take the refund."],
   [/IllegalTransition/i, "This policy has already moved on. Refresh to see its current state."],

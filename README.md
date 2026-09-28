@@ -123,8 +123,12 @@ Before adapting the template, understand these limits:
 - The registry checks authorization, state and escrow; it does **not**
   independently verify the oracle condition. Splitting it from `Settlement`
   does not make faulty or malicious authorized settlement logic harmless.
-- `preview()` does not perform every lifecycle check from `trigger()`.
-  A positive preview cannot guarantee transaction success.
+- `preview()` applies the same state and deadline checks as `trigger()`, with
+  the registry's own errors. A positive preview still cannot guarantee
+  success: the price, the clock or another caller can move before the
+  transaction executes.
+- `createPolicy()` rejects a zero payout (`ZeroPayout`) and a zero threshold
+  (`ZeroThreshold`).
 - The first funding call must cover the payout or it reverts. `fund()`
   accepts only Draft or Active policies strictly before their
   deadline. Later states reject deposits with `FundingNotAllowed`; a Draft
@@ -137,15 +141,14 @@ Before adapting the template, understand these limits:
   HBAR can still revert its own settlement, and a creator that refuses it
   cannot take a refund. Execution still depends on fees, oracle data and
   network availability.
-- Reverted transactions roll back their events. Legacy source comments saying
-  `TriggerAccepted` survives a later revert are inaccurate.
+- Reverted transactions roll back their events, including `TriggerAccepted`:
+  it records a settlement that happened, never an attempt that failed.
 
 **Current deployment:** the testnet contracts in
 [deployedContracts.ts](packages/nextjs/contracts/deployedContracts.ts) include
-the funding guard and surplus `withdraw()`, and are verified on Sourcify. See
-[EVIDENCE.md](EVIDENCE.md). The earlier deployment it replaced lacked both;
-its records are kept there as history. The legacy comments identified above
-should not be treated as extra guarantees.
+the funding guard, surplus `withdraw()`, the zero-value guards and the
+stricter `preview()`, and are verified on Sourcify. See
+[EVIDENCE.md](EVIDENCE.md), which keeps earlier deployments as history.
 
 ## HCS evidence: a separate operator task
 
@@ -247,7 +250,7 @@ node .yarn/releases/yarn-3.2.3.cjs next:build
 
 Keep `HEDERA_FORKING` unset for offline contract tests. Recent local checks
 recorded 174 core-library tests passing. The contract suite has
-79 passing tests, covering rejected deposits, unchanged escrow balances,
+83 passing tests, covering rejected deposits, unchanged escrow balances,
 deadline boundaries and valid top-up recovery. Contract lint also passes.
 The separate `hardhat:check-types` command now passes after adding generated
 contract and event types to the evidence and demo scripts. Run `hardhat:compile`

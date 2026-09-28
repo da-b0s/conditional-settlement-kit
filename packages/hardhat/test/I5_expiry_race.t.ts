@@ -144,4 +144,33 @@ describe("I5 — expiry and settlement are mutually exclusive", () => {
       expect(await d.registry.stateOf(policyId)).to.equal(State.Settled);
     });
   });
+
+  describe("preview() refuses whatever trigger() would refuse", () => {
+    // The UI enables Settle on a positive preview. If preview said "ready" for
+    // a policy the registry will refuse, the button would offer a revert.
+
+    it("reports a live, met condition on an Active policy", async () => {
+      const policyId = await createFundedPolicy(d);
+      const [price, , conditionMet] = await d.settlement.preview(policyId);
+      expect(conditionMet).to.equal(true);
+      expect(price).to.be.greaterThan(0n);
+    });
+
+    it("reverts AlreadyExpired once the deadline passes, like trigger()", async () => {
+      const policyId = await createFundedPolicy(d, { expiryInSeconds: DAY });
+      await advance(DAY + 1);
+      // Keep the reading fresh, so the deadline is the only thing refusing.
+      await d.aggregator.setAgeSeconds(0);
+      await expect(d.settlement.preview(policyId)).to.be.revertedWithCustomError(d.registry, "AlreadyExpired");
+      await expect(d.settlement.trigger(policyId)).to.be.revertedWithCustomError(d.registry, "AlreadyExpired");
+    });
+
+    it("reverts IllegalTransition on a policy that is not Active, like trigger()", async () => {
+      const policyId = await createFundedPolicy(d);
+      await d.settlement.trigger(policyId);
+      expect(await d.registry.stateOf(policyId)).to.equal(State.Settled);
+      await expect(d.settlement.preview(policyId)).to.be.revertedWithCustomError(d.registry, "IllegalTransition");
+      await expect(d.settlement.trigger(policyId)).to.be.revertedWithCustomError(d.registry, "IllegalTransition");
+    });
+  });
 });

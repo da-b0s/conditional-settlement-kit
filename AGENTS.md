@@ -36,7 +36,7 @@ yarn install
 yarn lint
 yarn next:test        # vitest, 174 tests at the latest check, offline
 yarn next:build
-yarn hardhat:test     # 79 tests, in-memory chain; timing varies
+yarn hardhat:test     # 83 tests, in-memory chain; timing varies
 
 # The live measurement. Needs the network, no credentials.
 yarn next:test:live

@@ -30,8 +30,10 @@ contract Settlement {
 
     event PriceSourceSet(bytes32 indexed asset, address indexed source);
     event OwnerChanged(address indexed from, address indexed to);
-    /// @dev Emitted before the registry is touched, so the evidence trail
-    ///      records what was observed even if the transition then fails.
+    /// @dev Emitted once the condition check passes, with the observation it
+    ///      passed on. If the registry then refuses the transition, the whole
+    ///      call reverts and this event is rolled back with it — it records a
+    ///      settlement that happened, never an attempt that failed.
     event TriggerAccepted(uint256 indexed policyId, bytes32 indexed asset, uint256 price, uint64 observedAt);
 
     error NotOwner();
@@ -106,10 +108,20 @@ contract Settlement {
 
     /// @notice What would happen if trigger() were called right now.
     /// @dev A UI should call this before offering the button. It reverts for
-    ///      exactly the same reasons trigger() would, so a caller cannot see
-    ///      "ready" here and a failure there.
+    ///      the reasons trigger() would — unknown policy, not Active, deadline
+    ///      passed, no source, or a reading the source refuses — using the
+    ///      registry's own errors, so "ready" here means the lifecycle checks
+    ///      pass too. An unmet threshold is reported as conditionMet = false
+    ///      rather than a revert, so a UI can still show the latest price.
     function preview(uint256 policyId) external view returns (uint256 price, uint64 observedAt, bool conditionMet) {
         PolicyRegistry.Policy memory p = registry.getPolicy(policyId);
+        // The two lifecycle checks markTriggered() applies, in its order.
+        if (block.timestamp >= p.expiry) {
+            revert PolicyRegistry.AlreadyExpired(policyId, p.expiry, block.timestamp);
+        }
+        if (p.state != PolicyRegistry.State.Active) {
+            revert PolicyRegistry.IllegalTransition(policyId, p.state, PolicyRegistry.State.Triggered);
+        }
         IPriceSource source = priceSourceOf[p.asset];
         if (address(source) == address(0)) revert NoPriceSource(p.asset);
 

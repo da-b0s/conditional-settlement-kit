@@ -179,12 +179,7 @@ export default function HowItWorksPage() {
         <h2 className="text-2xl font-bold">For developers</h2>
         <p className="mt-2 text-base-content/70">
           Six guarantees, each checked by its own test. The source is on{" "}
-          <a
-            href="https://github.com/da-b0s/conditional-settlement-kit"
-            target="_blank"
-            rel="noreferrer"
-            className="link text-primary"
-          >
+          <a href="https://github.com/da-b0s/talon" target="_blank" rel="noreferrer" className="link text-primary">
             GitHub
           </a>
           .

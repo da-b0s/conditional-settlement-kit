@@ -10,12 +10,7 @@ export const Footer = () => {
   return (
     <footer className="min-h-0 py-6 px-1 border-t border-base-300 mt-8">
       <div className="flex flex-wrap justify-center items-center gap-x-3 gap-y-1 text-sm w-full text-base-content/60">
-        <a
-          href="https://github.com/da-b0s/conditional-settlement-kit"
-          target="_blank"
-          rel="noreferrer"
-          className="link hover:text-primary"
-        >
+        <a href="https://github.com/da-b0s/talon" target="_blank" rel="noreferrer" className="link hover:text-primary">
           GitHub
         </a>
         <span className="opacity-30">|</span>

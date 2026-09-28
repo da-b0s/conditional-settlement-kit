@@ -7,7 +7,7 @@ Start with the read-only pages; wallet transactions and operator setup can wait.
 ## 1. Run the frontend
 
 Install Node 20.18.3 or later. Open a terminal in the extracted or cloned
-`conditional-settlement-kit` folder, then run:
+`talon` folder, then run:
 
 ```sh
 node .yarn/releases/yarn-3.2.3.cjs install --immutable

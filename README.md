@@ -292,7 +292,7 @@ Talon is a Scaffold-HBAR template: with the repository public, a new project
 can be scaffolded from it with:
 
 ```sh
-npm create scaffold-hbar@latest -- --template da-b0s/conditional-settlement-kit
+npm create scaffold-hbar@latest -- --template da-b0s/talon
 ```
 
 Verify the scaffold output and repeat install, lint, build and route checks

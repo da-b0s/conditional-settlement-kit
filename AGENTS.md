@@ -5,7 +5,7 @@ Claude Code loads it through `CLAUDE.md`.
 
 ## Project overview
 
-This is **Talon** (repository `conditional-settlement-kit`): a scaffold-hbar
+This is **Talon** (repository `da-b0s/talon`): a scaffold-hbar
 template, and a Scaffold-HBAR bounty entry, for
 price-triggered settlement. Escrow a payout, attach it to a price condition,
 and let anyone settle it once the condition holds.

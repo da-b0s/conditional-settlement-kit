@@ -25,7 +25,7 @@ Stop the server with Ctrl+C.
 | --- | --- |
 | Home | Price-triggered escrow lifecycle |
 | Feeds | Live prices, reading ages and configured freshness limits |
-| Evidence | Opens on topic `0.0.10743528`, the recorded demo trail |
+| Evidence | Opens on topic `0.0.10752744`, the recorded demo trail |
 | Policies | Review the flow; connect a funded testnet wallet when ready to transact |
 
 Reaching a price threshold does not automatically send a settlement transaction.

@@ -390,7 +390,7 @@ const deployedContracts = {
       deployedOnBlock: 41050147,
     },
     PolicyRegistry: {
-      address: "0xB3BfE675cbab5bF146fAc6B4B6a6B3d02f7648Ea",
+      address: "0x25B67900B72BFf2FfeC604F197117570E351b6db",
       abi: [
         {
           inputs: [],
@@ -568,6 +568,16 @@ const deployedContracts = {
         {
           inputs: [],
           name: "ZeroAddress",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "ZeroPayout",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "ZeroThreshold",
           type: "error",
         },
         {
@@ -1195,10 +1205,10 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 41050152,
+      deployedOnBlock: 41076053,
     },
     Settlement: {
-      address: "0x9c6b35c1b7b95B0C60d02fa43bACf399E26f73B3",
+      address: "0xa95601CA138C2a673C4314E6beFf56bb3832257C",
       abi: [
         {
           inputs: [
@@ -1210,6 +1220,27 @@ const deployedContracts = {
           ],
           stateMutability: "nonpayable",
           type: "constructor",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+            {
+              internalType: "uint64",
+              name: "expiry",
+              type: "uint64",
+            },
+            {
+              internalType: "uint256",
+              name: "nowTs",
+              type: "uint256",
+            },
+          ],
+          name: "AlreadyExpired",
+          type: "error",
         },
         {
           inputs: [
@@ -1235,6 +1266,27 @@ const deployedContracts = {
             },
           ],
           name: "ConditionNotMet",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "policyId",
+              type: "uint256",
+            },
+            {
+              internalType: "enum PolicyRegistry.State",
+              name: "from",
+              type: "uint8",
+            },
+            {
+              internalType: "enum PolicyRegistry.State",
+              name: "to",
+              type: "uint8",
+            },
+          ],
+          name: "IllegalTransition",
           type: "error",
         },
         {
@@ -1469,7 +1521,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 41050157,
+      deployedOnBlock: 41076059,
     },
   },
 } as const;

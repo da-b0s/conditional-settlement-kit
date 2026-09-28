@@ -1,8 +1,76 @@
 # Evidence
 
-## Current deployment — 27 September 2026
+## Current deployment — 28 September 2026
 
-The contracts the app uses today, on Hedera testnet. They include the funding
+The contracts the app uses today, on Hedera testnet. On top of the 27 September
+deployment below, `createPolicy()` refuses a zero payout or threshold, and
+`preview()` refuses an expired or non-Active policy with the same errors
+`trigger()` would. All three contracts are verified on Sourcify with
+`exact_match`.
+
+| Contract | Address | |
+| --- | --- | --- |
+| `PolicyRegistry` | `0x25B67900B72BFf2FfeC604F197117570E351b6db` | [HashScan](https://hashscan.io/testnet/contract/0x25B67900B72BFf2FfeC604F197117570E351b6db) · [Sourcify](https://repo.sourcify.dev/contracts/full_match/296/0x25B67900B72BFf2FfeC604F197117570E351b6db/) |
+| `Settlement` | `0xa95601CA138C2a673C4314E6beFf56bb3832257C` | [HashScan](https://hashscan.io/testnet/contract/0xa95601CA138C2a673C4314E6beFf56bb3832257C) · [Sourcify](https://repo.sourcify.dev/contracts/full_match/296/0xa95601CA138C2a673C4314E6beFf56bb3832257C/) |
+| `ChainlinkPriceSource` | `0x63c544315Dc21187eb1B6668bE8139e8a778C6d1` | [HashScan](https://hashscan.io/testnet/contract/0x63c544315Dc21187eb1B6668bE8139e8a778C6d1) · [Sourcify](https://repo.sourcify.dev/contracts/full_match/296/0x63c544315Dc21187eb1B6668bE8139e8a778C6d1/) · unchanged, reused |
+
+Deployer and contract owner: [`0.0.10743664`](https://hashscan.io/testnet/account/0.0.10743664).
+Evidence operator: [`0.0.10349640`](https://hashscan.io/testnet/account/0.0.10349640).
+
+### A settlement, end to end
+
+Policy #1 on HBAR/USD, 1 HBAR payout, settled by an account that is neither
+its creator nor its beneficiary. The beneficiary holds exactly 1 HBAR and the
+policy's escrow is zero.
+
+| Step | Transaction |
+| --- | --- |
+| `createPolicy` | [`0xd3b61cde2c70d029…`](https://hashscan.io/testnet/transaction/0xd3b61cde2c70d029a3f738ac537b772818ffe2db424ddd0bd417c49aad481a39) |
+| `fund` the escrow | [`0xa3510083e7b84177…`](https://hashscan.io/testnet/transaction/0xa3510083e7b84177caf9c1b0570c23053a84eda614b58d745ecfa332ec155d3f) |
+| Fund the settler | [`0x98f3c06fc2f4036c…`](https://hashscan.io/testnet/transaction/0x98f3c06fc2f4036c5a0acf92f6c96254dcca4c7a287c9923ced0bcd9513254a3) |
+| **`trigger()` — by the stranger** | [`0x3d3397ddfe128d84…`](https://hashscan.io/testnet/transaction/0x3d3397ddfe128d84d749be71916db810011fa9c6124fc2ed404ecd3b3540c0ab) |
+
+| Party | Account |
+| --- | --- |
+| Beneficiary | [`0xA563aB5A8DCB548B14E49308D8D663493A1b80Bf`](https://hashscan.io/testnet/account/0xA563aB5A8DCB548B14E49308D8D663493A1b80Bf) — received 1 HBAR |
+| Settler | [`0x967f338d51626090B94B78F62917e843A75a271D`](https://hashscan.io/testnet/account/0x967f338d51626090B94B78F62917e843A75a271D) |
+
+Settled on an HBAR/USD reading of 0.09476357, inside that feed's 3,600-second
+bound. After settlement, simulating `trigger(1)` and calling `preview(1)` both
+revert with `IllegalTransition(1, Settled, Triggered)`: I1 holds, and preview
+now says so rather than reporting "ready".
+
+This run was interrupted by dropped connections to the relay. The script died
+waiting for the `trigger()` receipt after the transaction had been accepted;
+the result above was read back from the mirror node. The deploy was likewise
+finished across reruns, which is why it now skips work already on chain.
+
+### Evidence topic
+
+Topic [`0.0.10752744`](https://hashscan.io/testnet/topic/0.0.10752744), created
+with a submit key, holds three records for policy #1: `policy_created`,
+`triggered`, `settled`. `/evidence` opens on it by default.
+
+```sh
+curl -s "https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10752744/messages?limit=100&order=asc"
+```
+
+Reproduce with `yarn hardhat:deploy`, `yarn lifecycle` and
+`yarn evidence:publish --network hederaTestnet`; the first two prompt for the
+deployer password.
+
+HCS records were published separately by an operator. Their ordering does not
+prove that they capture every contract event or independently validate the
+operator's claims. This file does not demonstrate an HSS scheduled expiry.
+
+---
+
+## Earlier deployment — 27 September 2026 (history)
+
+Replaced on 28 September 2026 by the deployment above, which reuses its
+`ChainlinkPriceSource`. Its policy #1 and topic `0.0.10743528` remain readable.
+
+The contracts the app used until 28 September. They include the funding
 guard and the surplus `withdraw()` (settlement credits any escrow beyond the
 payout to the creator instead of sending it, so a creator that refuses HBAR
 cannot block the beneficiary's payout). All three are verified on Sourcify
@@ -45,7 +113,7 @@ resume a funded policy with `LIFECYCLE_POLICY_ID`.
 
 Topic [`0.0.10743528`](https://hashscan.io/testnet/topic/0.0.10743528), created
 with a submit key, holds three records for policy #1: `policy_created`,
-`triggered`, `settled`. `/evidence` opens on it by default.
+`triggered`, `settled`.
 
 ```sh
 curl -s "https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.10743528/messages?limit=100&order=asc"

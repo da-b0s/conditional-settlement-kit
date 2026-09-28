@@ -26,7 +26,7 @@ If Yarn is already configured, `yarn install --immutable` and `yarn next:dev`
 are equivalent. All scripts below can use the vendored Yarn command.
 
 No wallet, private key, `.env` file or redeployment is needed to explore Home,
-Feeds or Evidence, which opens on this deployment's topic `0.0.10743528`.
+Feeds or Evidence, which opens on this deployment's topic `0.0.10752744`.
 Wallet transactions require a funded Hedera testnet account. Hedera testnet is
 the only network the app and contracts target.
 
@@ -69,7 +69,7 @@ implemented; `IPriceSource` is the extension point.
    parallel RPC read has a 15-second deadline, including its response body.
    Healthy feeds remain visible if others fail. A total outage shows the
    configuration and retry option. Retries fetch fresh data.
-3. **Evidence:** opens on topic `0.0.10743528`, the recorded testnet lifecycle. Reads
+3. **Evidence:** opens on topic `0.0.10752744`, the recorded testnet lifecycle. Reads
    share a 15-second budget across pagination and the empty-topic check. A
    timeout reports failure rather than presenting the partial read as complete.
 4. **Policies:** connect a funded testnet wallet to create and fund a policy,

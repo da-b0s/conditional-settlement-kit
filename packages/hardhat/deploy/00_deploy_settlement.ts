@@ -46,6 +46,25 @@ export const FEEDS: { pair: string; proxy: string; maxAge: number }[] = [
 
 export const assetKey = (pair: string) => ethers.keccak256(ethers.toUtf8Bytes(pair));
 
+/**
+ * What ChainlinkPriceSource already holds for an asset, read from storage.
+ *
+ * The contract exposes the bound (maxAgeOf) but not the proxy address, and
+ * the proxy is what a changed feed table would change. `_feeds` is storage
+ * slot 1 (after `owner`), and one Feed packs into a single word:
+ * aggregator (bits 0-159), maxAge (160-223), decimals (224-231),
+ * registered (232-239). Checked against the live contract on 28 Sep 2026.
+ */
+async function registeredFeed(hre: HardhatRuntimeEnvironment, source: string, asset: string) {
+  const slot = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(["bytes32", "uint256"], [asset, 1]));
+  const word = BigInt(await hre.ethers.provider.getStorage(source, slot));
+  return {
+    aggregator: `0x${(word & ((1n << 160n) - 1n)).toString(16).padStart(40, "0")}`,
+    maxAge: Number((word >> 160n) & ((1n << 64n) - 1n)),
+    registered: ((word >> 232n) & 0xffn) === 1n,
+  };
+}
+
 const deploySettlement: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy, log } = hre.deployments;
@@ -72,6 +91,14 @@ const deploySettlement: DeployFunction = async (hre: HardhatRuntimeEnvironment) 
 
   for (const feed of FEEDS) {
     const asset = assetKey(feed.pair);
+    // Rerunnable: skip a feed the source already holds with this exact proxy
+    // and bound. A deploy interrupted by a dropped connection then resumes
+    // with only the steps it had not done, instead of repeating all of them.
+    const existing = await registeredFeed(hre, source.address, asset);
+    if (existing.registered && existing.aggregator === feed.proxy.toLowerCase() && existing.maxAge === feed.maxAge) {
+      log(`  kept       ${feed.pair.padEnd(9)} maxAge ${String(feed.maxAge).padStart(6)}s  (already registered)`);
+      continue;
+    }
     try {
       const tx = await sourceC.registerFeed(asset, feed.proxy, feed.maxAge);
       await tx.wait();

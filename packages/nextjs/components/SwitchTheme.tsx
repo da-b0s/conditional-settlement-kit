@@ -25,7 +25,7 @@ export const SwitchTheme = ({ className }: { className?: string }) => {
   if (!mounted) return null;
 
   return (
-    <div className={`flex space-x-2 h-8 items-center justify-center text-sm ${className}`}>
+    <div className={`flex space-x-2 h-8 items-center justify-center text-sm ${className ?? ""}`}>
       {/* The visible control is the icon label; the checkbox carries the semantics.
           Without aria-label a screen reader announces an unnamed checkbox, because
           the label's only content is two decorative SVGs. */}

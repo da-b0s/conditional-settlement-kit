@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>.claw{fill:#16181d}.gem{fill:#0891b2}@media (prefers-color-scheme:dark){.claw{fill:#e6e9ef}.gem{fill:#3ccff0}}</style>
+  <path class="claw" d="M17 7 C 3 24, 5 48, 29 59 C 17 48, 13 32, 25 13 Z"/>
+  <path class="claw" d="M47 7 C 61 24, 59 48, 35 59 C 47 48, 51 32, 39 13 Z"/>
+  <path class="gem" d="M32 24 L 41 34 L 32 44 L 23 34 Z"/>
+</svg>

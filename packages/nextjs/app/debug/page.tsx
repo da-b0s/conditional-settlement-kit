@@ -4,7 +4,7 @@ import { getMetadata } from "~~/utils/scaffold-hbar/getMetadata";
 
 export const metadata = getMetadata({
   title: "Debug Contracts",
-  description: "Debug your deployed 🏗 Scaffold-HBAR contracts in an easy way",
+  description: "Read and call the deployed Talon contracts directly.",
 });
 
 const Debug: NextPage = () => {

@@ -1,4 +1,4 @@
-/* SIGNAL / Hedera Token Onboarding Kit
+/* Talon — theme for the app
  * DaisyUI 5 + Tailwind 4. Drop-in theme; existing React markup is preserved.
  */
 @import "tailwindcss";
@@ -35,12 +35,12 @@
   --shadow-center: 0 0 0 1px var(--signal-line);
   --animate-pulse-fast: pulse 1s ease-in-out infinite;
   /* Legacy utility names remain compatible without retaining purple. */
-  --color-hedera-ultraviolet: #0031ff;
-  --color-hedera-azure: #0031ff;
-  --color-hedera-charcoal: #101214;
-  --color-hedera-indigo: #0026cc;
-  --color-hedera-cobalt: #0031ff;
-  --color-hedera-violet: #0031ff;
+  --color-hedera-ultraviolet: #4744d4;
+  --color-hedera-azure: #4744d4;
+  --color-hedera-charcoal: #16181d;
+  --color-hedera-indigo: #3633b8;
+  --color-hedera-cobalt: #4744d4;
+  --color-hedera-violet: #4744d4;
   --color-hedera-smoke: #555d68;
 }
 @plugin "daisyui" {
@@ -54,17 +54,17 @@
   color-scheme: light;
   --color-base-100: #ffffff;
   --color-base-200: #f5f6f8;
-  --color-base-300: #e1e4e8;
-  --color-base-content: #121418;
-  --color-primary: #0031ff;
+  --color-base-300: #e2e5ea;
+  --color-base-content: #16181d;
+  --color-primary: #4744d4;
   --color-primary-content: #ffffff;
   --color-secondary: #262a31;
   --color-secondary-content: #ffffff;
-  --color-accent: #0031ff;
+  --color-accent: #0e7490;
   --color-accent-content: #ffffff;
-  --color-neutral: #121418;
+  --color-neutral: #16181d;
   --color-neutral-content: #ffffff;
-  --color-info: #0031ff;
+  --color-info: #0e7490;
   --color-info-content: #ffffff;
   --color-success: #067044;
   --color-success-content: #ffffff;
@@ -74,56 +74,56 @@
   --color-error-content: #ffffff;
   --radius-selector: 0.375rem;
   --radius-field: 0.5rem;
-  --radius-box: 0.75rem;
+  --radius-box: 0.5rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
   --depth: 0;
   --noise: 0;
   --signal-muted: #555d68;
-  --signal-line: #dce0e6;
+  --signal-line: #dde1e7;
   --signal-control: #7e8794;
-  --signal-wash: #edf1ff;
-  --signal-hover: #0026cc;
+  --signal-wash: #eeeefc;
+  --signal-hover: #3633b8;
   --tt-tailw: 6px;
 }
 @plugin "daisyui/theme" {
   name: "dark";
   prefersdark: true;
   color-scheme: dark;
-  --color-base-100: #17191d;
-  --color-base-200: #101214;
-  --color-base-300: #2c3037;
-  --color-base-content: #f1f2f4;
-  --color-primary: #8ba5ff;
-  --color-primary-content: #101214;
+  --color-base-100: #14161b;
+  --color-base-200: #0f1115;
+  --color-base-300: #2a2f3b;
+  --color-base-content: #e7e9ee;
+  --color-primary: #8b88f5;
+  --color-primary-content: #0f1115;
   --color-secondary: #e2e5eb;
-  --color-secondary-content: #101214;
-  --color-accent: #8ba5ff;
-  --color-accent-content: #101214;
+  --color-secondary-content: #0f1115;
+  --color-accent: #3ccff0;
+  --color-accent-content: #0f1115;
   --color-neutral: #e2e5eb;
-  --color-neutral-content: #101214;
-  --color-info: #8ba5ff;
-  --color-info-content: #101214;
-  --color-success: #6ed4a5;
-  --color-success-content: #101214;
-  --color-warning: #e7b75f;
-  --color-warning-content: #101214;
-  --color-error: #ff9187;
-  --color-error-content: #101214;
+  --color-neutral-content: #0f1115;
+  --color-info: #3ccff0;
+  --color-info-content: #0f1115;
+  --color-success: #3fd68e;
+  --color-success-content: #0f1115;
+  --color-warning: #f0b54a;
+  --color-warning-content: #0f1115;
+  --color-error: #f58a93;
+  --color-error-content: #0f1115;
   --radius-selector: 0.375rem;
   --radius-field: 0.5rem;
-  --radius-box: 0.75rem;
+  --radius-box: 0.5rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
   --depth: 0;
   --noise: 0;
-  --signal-muted: #a5adb9;
-  --signal-line: #30353e;
-  --signal-control: #717b89;
-  --signal-wash: #1b2541;
-  --signal-hover: #b2c3ff;
+  --signal-muted: #a0a7b4;
+  --signal-line: #2a2f3b;
+  --signal-control: #737b8a;
+  --signal-wash: #1d1e3a;
+  --signal-hover: #aeacff;
   --tt-tailw: 6px;
 }
 @layer base {
@@ -845,18 +845,17 @@ main .card-body [title^="Trap"] .truncate {
    simply render the content, unanimated and complete.
    =========================================================================== */
 
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap");
 
-/* ---- warm the base -------------------------------------------------------- */
+/* ---- Talon base: cool neutrals, charcoal in dark ---------------------------- */
 [data-theme="light"] {
-  --color-base-100: #fffdf9; /* card surface, barely warm */
-  --color-base-200: #f7f2ea; /* page — cream, not grey */
-  --color-base-300: #e4dbcc; /* rules */
+  --color-base-100: #ffffff; /* cards and header */
+  --color-base-200: #f6f7f9; /* page */
+  --color-base-300: #e2e5ea; /* rules */
 }
 [data-theme="dark"] {
-  --color-base-100: #191714; /* warm black, not blue-black */
-  --color-base-200: #100e0c;
-  --color-base-300: #2e2a25;
+  --color-base-100: #14161b; /* charcoal */
+  --color-base-200: #0f1115;
+  --color-base-300: #2a2f3b;
 }
 
 /* ---- grain ---------------------------------------------------------------- */
@@ -1064,16 +1063,16 @@ main h2 {
    These are the same lightnesses, re-tinted warm. Hue only; contrast ratios
    are unchanged, so the AA audit still holds. */
 [data-theme="light"] {
-  --signal-line: #e4ddd0; /* was #dce0e6 */
-  --signal-muted: #6a6157; /* was #555d68 */
-  --signal-control: #8b8378; /* was #717b89 */
-  --signal-wash: #f2eeff; /* was #edf1ff — kept blue, it carries the accent */
+  --signal-line: #dde1e7;
+  --signal-muted: #555d68;
+  --signal-control: #7e8794;
+  --signal-wash: #eeeefc; /* indigo tint: it carries the accent */
 }
 [data-theme="dark"] {
-  --signal-line: #37322b; /* was #30353e */
-  --signal-muted: #a8a096; /* was #a5adb9 */
-  --signal-control: #837b70; /* was #7e8794 */
-  --signal-wash: #1e2036; /* was #1b2541 */
+  --signal-line: #2a2f3b;
+  --signal-muted: #a0a7b4;
+  --signal-control: #737b8a;
+  --signal-wash: #1d1e3a;
 }
 
 /* ---- iOS viewport ---------------------------------------------------------- */

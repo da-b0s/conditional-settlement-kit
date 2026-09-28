@@ -6,7 +6,7 @@ import { DEFAULT_RPC, formatAge, formatAnswer, readLiveFeeds } from "~~/lib/sett
 import { DECLARED_HEARTBEAT_SECONDS, TESTNET_FEEDS } from "~~/lib/settlement/feeds";
 
 export const metadata: Metadata = {
-  title: "Feeds · Conditional Settlement Kit",
+  title: "Live prices",
   description:
     "Every Chainlink feed on Hedera testnet, read live, with the age each one is actually reporting against the bound this template enforces.",
 };

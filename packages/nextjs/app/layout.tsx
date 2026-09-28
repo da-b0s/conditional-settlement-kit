@@ -6,9 +6,9 @@ import "~~/styles/globals.css";
 import { getMetadata } from "~~/utils/scaffold-hbar/getMetadata";
 
 export const metadata = getMetadata({
-  title: "Conditional Settlement Kit",
+  title: "Talon — holds until it's true",
   description:
-    "Escrow a payout, attach it to a price condition, and let anyone settle it once the condition holds. Per-feed freshness bounds, a swappable oracle, and a public evidence trail on Hedera.",
+    "Lock HBAR into a promise that pays out automatically when a price hits your target, or comes back to you if it doesn't. On Hedera testnet.",
 });
 
 const ScaffoldHbarApp = ({ children }: { children: React.ReactNode }) => {
@@ -16,7 +16,8 @@ const ScaffoldHbarApp = ({ children }: { children: React.ReactNode }) => {
     // lang is required for screen readers to pick the right pronunciation rules.
     <html lang="en" suppressHydrationWarning>
       <body>
-        <ThemeProvider enableSystem>
+        {/* Light by default; the toggle switches to dark and the choice is remembered. */}
+        <ThemeProvider defaultTheme="light" enableSystem={false}>
           <ScaffoldHbarAppWithProviders>{children}</ScaffoldHbarAppWithProviders>
         </ThemeProvider>
       </body>

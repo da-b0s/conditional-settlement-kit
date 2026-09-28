@@ -85,9 +85,7 @@ export const PolicyFlow = () => {
         ) : (
           <div className="rounded-box border border-base-300 p-6">
             <p className="text-base-content/70">
-              Creating a policy is a transaction, so this step needs a wallet. Everything on{" "}
-              <span className="font-mono text-xs">/feeds</span> and <span className="font-mono text-xs">/evidence</span>{" "}
-              works without one.
+              Connect a wallet to create a policy. Live prices and Evidence work without one.
             </p>
             <div className="mt-4">
               <RainbowKitCustomConnectButton />

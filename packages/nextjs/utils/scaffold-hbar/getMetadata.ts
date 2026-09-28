@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
   ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
   : `http://localhost:${process.env.PORT || 3000}`;
-const titleTemplate = "%s | Scaffold-HBAR";
+const titleTemplate = "%s | Talon";
 
 export const getMetadata = ({
   title,
@@ -47,10 +47,10 @@ export const getMetadata = ({
       // SVG first for browsers that take it — it stays sharp at any density.
       // The PNG is the fallback for those that do not.
       icon: [
-        { url: "/preflight-favicon.svg", type: "image/svg+xml" },
-        { url: "/preflight-mark-32.png", sizes: "32x32", type: "image/png" },
+        { url: "/talon-mark.svg", type: "image/svg+xml" },
+        { url: "/talon-mark-32.png", sizes: "32x32", type: "image/png" },
       ],
-      apple: [{ url: "/preflight-avatar-512.png", sizes: "512x512", type: "image/png" }],
+      apple: [{ url: "/talon-icon-512.png", sizes: "512x512", type: "image/png" }],
     },
   };
 };

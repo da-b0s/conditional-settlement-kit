@@ -1,6 +1,6 @@
 {
-  "name": "Preflight",
-  "short_name": "Preflight",
-  "description": "Acquire and hold any Hedera token without hitting TOKEN_NOT_ASSOCIATED_TO_ACCOUNT.",
-  "iconPath": "preflight-mark.svg"
+  "name": "Talon",
+  "short_name": "Talon",
+  "description": "Promises in HBAR that pay out automatically when a price hits its target, or return to the creator if it doesn't.",
+  "iconPath": "talon-mark.svg"
 }

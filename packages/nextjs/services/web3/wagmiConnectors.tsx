@@ -33,7 +33,7 @@ export const wagmiConnectors = () => {
   }
 
   return connectorsForWallets(walletGroups, {
-    appName: "scaffold-hbar",
+    appName: "Talon",
     projectId: scaffoldConfig.walletConnectProjectId,
   });
 };

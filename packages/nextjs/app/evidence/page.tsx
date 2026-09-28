@@ -14,7 +14,7 @@ import {
 import { ALLOWED_TRANSITIONS, type PolicyState } from "~~/lib/settlement/invariants";
 
 export const metadata: Metadata = {
-  title: "Evidence · Conditional Settlement Kit",
+  title: "Evidence",
   description:
     "Read a settlement's public evidence trail back from the Hedera mirror node. No wallet, no key, no permission.",
 };

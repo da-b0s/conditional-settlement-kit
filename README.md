@@ -246,7 +246,7 @@ node .yarn/releases/yarn-3.2.3.cjs next:build
 ```
 
 Keep `HEDERA_FORKING` unset for offline contract tests. Recent local checks
-recorded 160 core-library tests passing. The contract suite has
+recorded 174 core-library tests passing. The contract suite has
 79 passing tests, covering rejected deposits, unchanged escrow balances,
 deadline boundaries and valid top-up recovery. Contract lint also passes.
 The separate `hardhat:check-types` command now passes after adding generated

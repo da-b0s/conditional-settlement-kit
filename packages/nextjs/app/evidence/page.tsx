@@ -1,7 +1,7 @@
 import Form from "next/form";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ExclamationTriangleIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { ReadEvidenceButton } from "~~/components/ReadEvidenceButton";
 import { RetryRead } from "~~/components/RetryRead";
 import {
@@ -103,19 +103,6 @@ export default async function EvidencePage({ searchParams }: { searchParams: Pro
         </div>
       )}
 
-      {!topicId && !error && (
-        <div role="note" className="alert mt-6">
-          <InformationCircleIcon className="h-5 w-5 shrink-0" />
-          <div>
-            <p className="font-semibold">Enter a topic to read.</p>
-            <p className="text-sm">
-              Create one with <span className="font-mono text-xs">yarn evidence:topic</span>, or paste any testnet topic
-              id to see how an unfamiliar one is handled.
-            </p>
-          </div>
-        </div>
-      )}
-
       {topic && topic.trim() !== projectTopic && (
         <p className="mt-4 text-sm">
           <Link className="link text-primary" href="/evidence">
@@ -163,7 +150,7 @@ function Trail({ trail }: { trail: EvidenceTrail }) {
       </div>
 
       {/* Problems first. A trail with holes must not look complete. */}
-      {(trail.unreadable > 0 || trail.gaps.length > 0) && (
+      {(trail.unreadable > 0 || trail.gaps.length > 0 || trail.truncated) && (
         <div role="alert" className="alert alert-warning mb-4">
           <ExclamationTriangleIcon className="h-5 w-5 shrink-0" />
           <div className="text-sm">
@@ -179,6 +166,12 @@ function Trail({ trail }: { trail: EvidenceTrail }) {
               <p className="mt-1">
                 Sequence numbers missing: <span className="font-mono">{trail.gaps.join(", ")}</span>. Messages exist
                 that this read did not return.
+              </p>
+            )}
+            {trail.truncated && (
+              <p className="mt-1">
+                Only the first {trail.entries.length} messages were read; the topic has more. Later records are not
+                shown, so a lifecycle below may look shorter than it is. Read the rest on the mirror node.
               </p>
             )}
           </div>
@@ -298,7 +291,11 @@ function Lifecycle({ policyId, trail }: { policyId: number; trail: EvidenceTrail
           this topic that the contracts did not.
         </p>
       ) : (
-        <p className="mt-2 text-sm text-success">Consistent with the state machine.</p>
+        <p className="mt-2 text-sm text-success">
+          {trail.truncated
+            ? "Consistent with the state machine so far. Later records were not read, so this may not be the full lifecycle."
+            : "Consistent with the state machine."}
+        </p>
       )}
     </li>
   );

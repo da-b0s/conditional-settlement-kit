@@ -124,3 +124,19 @@ export function formatAtDecimals(amount: bigint, decimals: number): string {
 export function hbarAmount(hbar: string, chainId: number): { txValue: bigint; contractAmount: bigint } {
   return { txValue: hbarToTxValue(hbar), contractAmount: hbarToContractAmount(hbar, chainId) };
 }
+
+/**
+ * Why a typed amount cannot be used, in words for the form — or null if it can.
+ *
+ * `Number(x) <= 0` is not a check: `Number("abc")` is NaN, NaN is not <= 0,
+ * and the bad input sails through to a library parse error. This checks the
+ * shape, the precision the chain can hold, and that it is above zero.
+ */
+export function amountProblem(amount: string, decimals: number, label: string): string | null {
+  const trimmed = amount.trim();
+  if (!/^(\d+\.?\d*|\.\d+)$/.test(trimmed)) return `${label} must be a number, like 1.5.`;
+  const fraction = trimmed.split(".")[1] ?? "";
+  if (fraction.length > decimals) return `${label} can have at most ${decimals} decimal places.`;
+  if (/^[0.]*$/.test(trimmed)) return `${label} must be above zero.`;
+  return null;
+}

@@ -10,7 +10,7 @@ import { useScaffoldWriteContract } from "~~/hooks/scaffold-hbar";
 import { useTargetNetwork } from "~~/hooks/scaffold-hbar/useTargetNetwork";
 import { TESTNET_FEEDS } from "~~/lib/settlement/feeds";
 import { transactionProblem } from "~~/lib/settlement/transactionFeedback";
-import { hbarToContractAmount } from "~~/lib/settlement/units";
+import { amountProblem, hbarToContractAmount, msgValueDecimals } from "~~/lib/settlement/units";
 import type { AllowedChainIds } from "~~/utils/scaffold-hbar";
 import { getParsedErrorWithAllAbis } from "~~/utils/scaffold-hbar/contract";
 
@@ -64,8 +64,12 @@ export const PolicyForm = ({ onCreated }: { onCreated: () => void }) => {
           : "A policy needs a beneficiary — the address that gets paid.",
       );
     }
-    if (!threshold || Number(threshold) <= 0) return setProblem("Set a threshold price above zero.");
-    if (!maxPayout || Number(maxPayout) <= 0) return setProblem("Set a payout above zero.");
+    // Thresholds are compared at 18dp; payouts are held at the chain's
+    // msg.value precision (8dp on Hedera). See units.ts.
+    const thresholdProblem = amountProblem(threshold, 18, "The threshold price");
+    if (thresholdProblem) return setProblem(thresholdProblem);
+    const payoutProblem = amountProblem(maxPayout, msgValueDecimals(targetNetwork.id), "The payout");
+    if (payoutProblem) return setProblem(payoutProblem);
 
     try {
       await writeContractAsync(

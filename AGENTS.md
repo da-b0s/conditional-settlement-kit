@@ -34,7 +34,7 @@ yarn install
 
 # Quality — all four must pass before any commit
 yarn lint
-yarn next:test        # vitest, 160 tests at the latest check, offline
+yarn next:test        # vitest, 174 tests at the latest check, offline
 yarn next:build
 yarn hardhat:test     # 79 tests, in-memory chain; timing varies
 

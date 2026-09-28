@@ -25,7 +25,6 @@
     "hardhat:test": "yarn workspace @sh/hardhat test",
     "hardhat:verify": "yarn workspace @sh/hardhat verify",
     "hardhat:verify:testnet": "yarn workspace @sh/hardhat verify:testnet",
-    "hardhat:verify:mainnet": "yarn workspace @sh/hardhat verify:mainnet",
     "lint": "yarn next:lint && yarn hardhat:lint",
     "next:build": "yarn workspace @sh/nextjs build",
     "next:check-types": "yarn workspace @sh/nextjs check-types",

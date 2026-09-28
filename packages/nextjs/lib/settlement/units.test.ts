@@ -9,6 +9,7 @@
 import {
   MSG_VALUE_DECIMALS_EVM,
   MSG_VALUE_DECIMALS_HEDERA,
+  amountProblem,
   contractAmountToHbar,
   hbarAmount,
   hbarToContractAmount,
@@ -94,5 +95,27 @@ describe("parsing", () => {
 
   it("renders a whole number without a trailing dot", () => {
     expect(contractAmountToHbar(100_000_000n, TESTNET)).toBe("1");
+  });
+});
+
+describe("amountProblem: what the forms refuse before a transaction", () => {
+  it.each(["1", "1.5", "0.00000001", ".5", "10."])("accepts %s", amount => {
+    expect(amountProblem(amount, 8, "Payout")).toBeNull();
+  });
+
+  it.each([
+    ["abc", "must be a number"],
+    ["1,000", "must be a number"],
+    ["-1", "must be a number"],
+    ["", "must be a number"],
+    ["0", "above zero"],
+    ["0.000", "above zero"],
+    ["0.000000001", "at most 8 decimal places"],
+  ])("refuses %s", (amount, reason) => {
+    expect(amountProblem(amount, 8, "Payout")).toContain(reason);
+  });
+
+  it("allows 18 places where the unit has them", () => {
+    expect(amountProblem("0.000000000000000001", 18, "Threshold")).toBeNull();
   });
 });

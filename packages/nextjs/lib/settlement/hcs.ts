@@ -82,6 +82,13 @@ export interface EvidenceTrail {
    * the mirror node has not surfaced yet.
    */
   gaps: number[];
+  /**
+   * True when the page budget ran out while the mirror node still had more.
+   * Later messages exist that this read did not fetch, so the trail — and any
+   * lifecycle checked against it — is incomplete. Gaps cannot show this: the
+   * missing messages come after the last one read, not between two of them.
+   */
+  truncated: boolean;
   /** The mirror node URL used, so a reader can check the claim themselves. */
   source: string;
 }
@@ -257,6 +264,7 @@ async function readEvidenceWithinDeadline(
     entries,
     unreadable: entries.filter(e => e.unparsed).length,
     gaps: findGaps(entries.map(e => e.sequenceNumber)),
+    truncated: path !== null,
     source: `${base}${first}`,
   };
 }

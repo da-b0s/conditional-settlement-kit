@@ -20,7 +20,8 @@ import "hardhat-deploy-ethers";
 
 import generateTsAbis from "./scripts/generateTsAbis";
 
-// Hedera JSON-RPC URL (testnet default). Set HEDERA_RPC_URL in .env for mainnet.
+// Hedera testnet JSON-RPC relay. HEDERA_RPC_URL in .env overrides it for every
+// testnet task, not only forking.
 const hederaRpcUrl = process.env.HEDERA_RPC_URL || "https://testnet.hashio.io/api";
 
 // Deployer key: run `yarn account:generate` or `yarn account:import`, or set __RUNTIME_DEPLOYER_PRIVATE_KEY at runtime.
@@ -73,14 +74,9 @@ const config: HardhatUserConfig = {
         }
       : {},
     hederaTestnet: {
-      url: "https://testnet.hashio.io/api",
+      url: hederaRpcUrl,
       accounts: [deployerPrivateKey],
       chainId: 296,
-    },
-    hederaMainnet: {
-      url: "https://mainnet.hashio.io/api",
-      accounts: [deployerPrivateKey],
-      chainId: 295,
     },
   },
   // Hedera is now supported on the main Sourcify instance (sourcify.dev).
@@ -113,9 +109,8 @@ task("verify").setAction(async (args, hre, runSuper) => {
   const address = args.address;
   const chainId = hre.network.config.chainId;
 
-  if (address && (chainId === 295 || chainId === 296)) {
-    const network = chainId === 295 ? "mainnet" : "testnet";
-    console.log(`\nHashScan: https://hashscan.io/${network}/contract/${address}`);
+  if (address && chainId === 296) {
+    console.log(`\nHashScan: https://hashscan.io/testnet/contract/${address}`);
   }
 });
 

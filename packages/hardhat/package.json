@@ -17,7 +17,6 @@
     "test": "REPORT_GAS=true hardhat test",
     "verify": "hardhat verify",
     "verify:testnet": "hardhat verify --network hederaTestnet",
-    "verify:mainnet": "hardhat verify --network hederaMainnet",
     "verify:sourcify": "ts-node scripts/verifySourcify.ts",
     "evidence:topic": "ts-node scripts/createEvidenceTopic.ts",
     "evidence:publish": "hardhat run scripts/publishEvidence.ts",

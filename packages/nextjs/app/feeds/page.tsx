@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * The evidence page.
+ * The live feeds page.
  *
  * A Server Component, deliberately: it reads the feeds on the server with
  * `fetch` and renders HTML. No wallet, no `.env`, no client bundle, nothing

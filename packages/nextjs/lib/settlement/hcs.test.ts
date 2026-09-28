@@ -77,8 +77,16 @@ describe("reading a topic", () => {
     const { impl, calls } = fakeFetch([
       { messages: [message(1, record(1))], links: { next: "/api/v1/topics/0.0.5005/messages?page=next" } },
     ]);
-    await readEvidence("0.0.5005", { fetchImpl: impl, maxPages: 3 });
+    const trail = await readEvidence("0.0.5005", { fetchImpl: impl, maxPages: 3 });
     expect(calls).toHaveLength(3);
+    // And it says so: stopping early must not look like the end of the topic.
+    expect(trail.truncated).toBe(true);
+  });
+
+  it("is not truncated when the mirror node reports no next page", async () => {
+    const { impl } = fakeFetch([{ messages: [message(1, record(1))], links: { next: null } }]);
+    const trail = await readEvidence("0.0.5005", { fetchImpl: impl, maxPages: 1 });
+    expect(trail.truncated).toBe(false);
   });
 
   it("publishes the URL it used, so the claim is checkable", async () => {

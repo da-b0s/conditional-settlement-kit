@@ -9,7 +9,13 @@ import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaf
 import { useTargetNetwork } from "~~/hooks/scaffold-hbar/useTargetNetwork";
 import { TESTNET_FEEDS } from "~~/lib/settlement/feeds";
 import { transactionProblem } from "~~/lib/settlement/transactionFeedback";
-import { contractAmountToHbar, hbarToTxValue } from "~~/lib/settlement/units";
+import {
+  amountProblem,
+  contractAmountToHbar,
+  hbarToContractAmount,
+  hbarToTxValue,
+  msgValueDecimals,
+} from "~~/lib/settlement/units";
 import type { AllowedChainIds } from "~~/utils/scaffold-hbar";
 import { getParsedErrorWithAllAbis } from "~~/utils/scaffold-hbar/contract";
 import { getBlockExplorerAddressLink } from "~~/utils/scaffold-hbar/networks";
@@ -99,6 +105,17 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
   const maxPayout = BigInt(policy.maxPayout);
   const escrow = BigInt(policy.escrow);
 
+  // Checked here so a short deposit is explained next to the input instead of
+  // surfacing as a PayoutExceedsEscrow revert. A Draft policy holds nothing,
+  // so its first deposit must cover the whole payout.
+  const needed = maxPayout - escrow;
+  const fundProblem = !fundAmount
+    ? null
+    : (amountProblem(fundAmount, msgValueDecimals(targetNetwork.id), "The deposit") ??
+      (hbarToContractAmount(fundAmount, targetNetwork.id) < needed
+        ? `The first deposit must cover the full payout: at least ${contractAmountToHbar(needed, targetNetwork.id)} HBAR.`
+        : null));
+
   const state = STATES[Number(policy.state)] ?? "Unknown";
   const pair = PAIR_BY_HASH.get(policy.asset.toLowerCase());
   const isCreator = address?.toLowerCase() === policy.creator.toLowerCase();
@@ -185,7 +202,7 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
             </label>
             <button
               className="btn btn-primary btn-sm"
-              disabled={busy || !fundAmount || Number(fundAmount) <= 0}
+              disabled={busy || !fundAmount || !!fundProblem}
               onClick={() =>
                 run(() =>
                   writeRegistry(
@@ -205,6 +222,11 @@ export const PolicyCard = ({ policyId }: { policyId: bigint }) => {
             >
               Fund
             </button>
+            {fundProblem && (
+              <p role="alert" className="self-center text-xs text-error">
+                {fundProblem}
+              </p>
+            )}
           </div>
         )}
 

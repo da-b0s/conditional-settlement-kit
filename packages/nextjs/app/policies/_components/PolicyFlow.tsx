@@ -18,11 +18,18 @@ import { useTargetNetwork } from "~~/hooks/scaffold-hbar/useTargetNetwork";
  * on Hedera: mirror-node log queries lag, and a policy created ten seconds
  * ago would be missing from an event-derived list while being perfectly
  * readable by id.
+ *
+ * Only the newest PAGE_SIZE are rendered at first. Every card polls its own
+ * policy and price, so rendering every policy ever created would multiply
+ * requests to the public RPC until it rate-limits the page.
  */
+const PAGE_SIZE = 10;
+
 export const PolicyFlow = () => {
   const { isConnected } = useAccount();
   const { targetNetwork } = useTargetNetwork();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [shown, setShown] = useState(PAGE_SIZE);
 
   const { data: registry, isLoading: registryLoading } = useDeployedContractInfo({ contractName: "PolicyRegistry" });
 
@@ -42,10 +49,9 @@ export const PolicyFlow = () => {
     return (
       <div role="alert" className="alert alert-warning">
         <div>
-          <p className="font-semibold">No PolicyRegistry deployed on the selected network.</p>
+          <p className="font-semibold">No PolicyRegistry is deployed on {targetNetwork.name}.</p>
           <p className="mt-1 text-sm">
-            Deploy with <span className="font-mono">yarn hardhat:deploy --network hederaTestnet</span>, or switch the
-            network in the header to one where it is deployed.
+            Deploy with <span className="font-mono">yarn hardhat:deploy</span>, which targets Hedera testnet.
           </p>
         </div>
       </div>
@@ -53,7 +59,8 @@ export const PolicyFlow = () => {
   }
 
   const count = nextPolicyId ? Number(nextPolicyId) - 1 : 0;
-  const ids = Array.from({ length: count }, (_, i) => count - i);
+  const ids = Array.from({ length: Math.min(count, shown) }, (_, i) => count - i);
+  const hidden = count - ids.length;
 
   return (
     <div className="space-y-10">
@@ -110,6 +117,17 @@ export const PolicyFlow = () => {
               </li>
             ))}
           </ul>
+        )}
+
+        {hidden > 0 && (
+          <div className="mt-4 flex items-center gap-3">
+            <button className="btn btn-outline btn-sm" onClick={() => setShown(n => n + PAGE_SIZE)}>
+              Show {Math.min(hidden, PAGE_SIZE)} older
+            </button>
+            <span className="text-xs text-base-content/60">
+              Showing {ids.length} of {count}
+            </span>
+          </div>
         )}
       </section>
     </div>

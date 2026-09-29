@@ -11,6 +11,49 @@
       "frontend": "nextjs-app",
       "solidityFramework": "hardhat",
       "packageManager": "yarn"
+    },
+    "outro": {
+      "installCommand": "node .yarn/releases/yarn-3.2.3.cjs install --immutable",
+      "sections": [
+        {
+          "title": "Explore Talon on Hedera testnet",
+          "steps": [
+            {
+              "label": "Start the frontend",
+              "command": "node .yarn/releases/yarn-3.2.3.cjs next:dev"
+            },
+            {
+              "url": "http://localhost:3000"
+            },
+            {
+              "text": "Home, Live prices and Evidence work without a wallet, private key or .env file. Existing testnet contracts are included; no local chain or redeployment is needed."
+            },
+            {
+              "text": "To create and fund policies, connect a funded Hedera testnet wallet. Approve settlement, expiry and refund transactions explicitly."
+            }
+          ]
+        },
+        {
+          "title": "Check your installation",
+          "steps": [
+            {
+              "command": "node .yarn/releases/yarn-3.2.3.cjs lint"
+            },
+            {
+              "command": "node .yarn/releases/yarn-3.2.3.cjs next:test"
+            },
+            {
+              "command": "node .yarn/releases/yarn-3.2.3.cjs hardhat:test"
+            },
+            {
+              "command": "node .yarn/releases/yarn-3.2.3.cjs next:build"
+            },
+            {
+              "text": "Read START-HERE.md for the walkthrough and README.md for architecture, optional operator actions and deployment details."
+            }
+          ]
+        }
+      ]
     }
   }
 }
